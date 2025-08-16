@@ -1,0 +1,1 @@
+export { useInfiniteScrollBeats } from './useInfiniteScrollBeats';
