@@ -37,6 +37,9 @@ const translations = {
     'dashboard.theme': 'Theme',
     'dashboard.settings': 'Settings',
     'dashboard.upgradePro': 'Upgrade to Pro',
+    'dashboard.payouts': 'Payouts',
+    'dashboard.billing': 'Billing',
+    'dashboard.subscription': 'Subscription',
     
     // Theme
     'theme.title': 'Custom Theme',
@@ -1982,6 +1985,7 @@ const translations = {
     'subscription.accessBetaFeatures': 'Accès aux fonctionnalités bêta',
     'subscription.unlimitedUploads': 'Téléchargements illimités',
     'subscription.prioritySupport247': 'Support prioritaire 24/7',
+    'subscription.unlimited': 'Téléchargements illimités',
     'subscription.dedicatedAccountManager': 'Gestionnaire de compte dédié',
     'subscription.customIntegrations': 'Intégrations personnalisées',
     'subscription.downgrade': 'Rétrograder',
@@ -2066,6 +2070,9 @@ const translations = {
     'dashboard.theme': 'Thème',
     'dashboard.settings': 'Paramètres',
     'dashboard.upgradePro': 'Passer à Pro',
+    'dashboard.payouts': 'Paiements',
+    'dashboard.billing': 'Facturation',
+    'dashboard.subscription': 'Abonnement',
     
     // Theme
     'theme.title': 'Thème Personnalisé',

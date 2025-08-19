@@ -19,6 +19,7 @@ import {
   Monitor,
   ChevronDown,
   Palette,
+  CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -30,10 +31,12 @@ import { useLanguage } from "@/contexts/LanguageContext"
 const dashboardItems = [
   { title: "overview", url: "/dashboard", icon: BarChart3 },
   { title: "analytics", url: "/dashboard/analytics", icon: TrendingUp },
-  // { title: "Tracks", url: "/dashboard/tracks", icon: Music },
   { title: "licenses", url: "/dashboard/licenses", icon: FileText },
   { title: "sales", url: "/dashboard/sales", icon: DollarSign },
   { title: "theme", url: "/dashboard/theme", icon: Palette },
+  { title: "payouts", url: "/dashboard/payouts", icon: DollarSign },
+  { title: "billing", url: "/dashboard/billing", icon: CreditCard },
+  { title: "subscription", url: "/dashboard/subscription", icon: Crown },
   { title: "settings", url: "/dashboard/settings", icon: Settings },
 ]
 

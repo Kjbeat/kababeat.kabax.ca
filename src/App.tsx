@@ -26,6 +26,9 @@ import { PlaylistsLayout } from "@/modules/playlists";
 import { MyBeatsLayout } from "@/modules/my-beats";
 import { Explore } from "@/modules/explore";
 import { NotificationsLayout } from "@/modules/notifications";
+import { BillingSettings } from "@/modules/dashboard";
+import SubscriptionSettings from "@/modules/dashboard/components/Settings/SubscriptionSettings";
+import PayoutSettings from "@/modules/dashboard/components/Settings/PayoutSettings";
 
 // Pages that still need migration
 // import Index from "./pages/Index"; // replaced by LandingLayout
@@ -84,6 +87,9 @@ function App() {
                         <Route path="sales" element={<DashboardSales />} />
                         <Route path="theme" element={<CustomThemeLayout />} />
                         <Route path="settings" element={<DashboardSettingsLayout />} />
+                        <Route path="payouts" element={<PayoutSettings />} />
+                        <Route path="billing" element={<BillingSettings />} />
+                        <Route path="subscription" element={<SubscriptionSettings />} />
                       </Route>
                       
                       <Route path="*" element={<SidebarProvider defaultOpen={true}><Layout><NotFound /></Layout></SidebarProvider>} />

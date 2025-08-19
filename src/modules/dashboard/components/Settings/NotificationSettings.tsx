@@ -31,17 +31,17 @@ export function NotificationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Bell className="h-5 w-5 mr-2" />
-          {t('notifications.title')}
+          {t('notificationSettings.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">{t('notifications.emailNotifications')}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('notificationSettings.emailNotifications')}</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>{t('notifications.salesNotifications')}</Label>
-                <p className="text-sm text-muted-foreground">{t('notifications.salesDescription')}</p>
+                <Label>{t('notificationSettings.salesNotifications')}</Label>
+                <p className="text-sm text-muted-foreground">{t('notificationSettings.salesDescription')}</p>
               </div>
               <Switch
                 checked={notifications.emailSales}
@@ -50,8 +50,8 @@ export function NotificationSettings() {
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>{t('notifications.commentNotifications')}</Label>
-                <p className="text-sm text-muted-foreground">{t('notifications.commentDescription')}</p>
+                <Label>{t('notificationSettings.commentNotifications')}</Label>
+                <p className="text-sm text-muted-foreground">{t('notificationSettings.commentDescription')}</p>
               </div>
               <Switch
                 checked={notifications.emailComments}
@@ -60,8 +60,8 @@ export function NotificationSettings() {
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>{t('notifications.followerNotifications')}</Label>
-                <p className="text-sm text-muted-foreground">{t('notifications.followerDescription')}</p>
+                <Label>{t('notificationSettings.followerNotifications')}</Label>
+                <p className="text-sm text-muted-foreground">{t('notificationSettings.followerDescription')}</p>
               </div>
               <Switch
                 checked={notifications.emailFollowers}

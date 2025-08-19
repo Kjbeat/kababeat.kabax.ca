@@ -30,9 +30,6 @@ export function DashboardSettingsLayout() {
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">{t('settings.profile')}</TabsTrigger>
-          <TabsTrigger value="billing">{t('settings.billing')}</TabsTrigger>
-          <TabsTrigger value="subscription">{t('settings.subscription')}</TabsTrigger>
-          <TabsTrigger value="payouts">{t('settings.payouts')}</TabsTrigger>
           <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
           <TabsTrigger value="privacy">{t('settings.privacy')}</TabsTrigger>
         </TabsList>
@@ -41,21 +38,8 @@ export function DashboardSettingsLayout() {
           <ProfileSettings />
         </TabsContent>
 
-        <TabsContent value="billing" className="space-y-4 sm:space-y-6">
-          <BillingSettings />
-        </TabsContent>
-
         <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
           <NotificationSettings />
-        </TabsContent>
-
-        {/* Placeholder tabs for other sections */}
-        <TabsContent value="subscription" className="space-y-4 sm:space-y-6">
-          <SubscriptionSettings />
-        </TabsContent>
-
-        <TabsContent value="payouts" className="space-y-4 sm:space-y-6">
-          <PayoutSettings />
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-4 sm:space-y-6">
