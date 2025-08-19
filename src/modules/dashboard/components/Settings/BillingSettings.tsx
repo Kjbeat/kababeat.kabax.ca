@@ -141,7 +141,7 @@ const removeMethod = (index: number) => {
 const aiUploadPct = calcPct(aiUpload.used, aiUpload.total);
 
 return (
-  <div className="space-y-8">
+  <div className="space-y-8 p-5">
       {/* Current Subscription */}
       <Card className="overflow-hidden border-0 shadow-sm ring-1 ring-border/60">
         <div className="relative">

@@ -55,7 +55,7 @@ export default function SubscriptionSettings() {
   return (
     <>
       {/* Subscription Management */}
-      <Card>
+      <Card >
         <CardHeader>
           <CardTitle className="flex items-center">
             <Crown className="h-5 w-5 mr-2" />

@@ -804,8 +804,14 @@ const translations = {
     'payouts.salesThisMonth': 'Sales this month are recorded automatically.',
     'payouts.onFirstNextMonth': 'On the 1st of next month, we initiate your payout.',
     'payouts.fundsGoTo': 'Funds go to your',
-    'payouts.paypalEmailLower': 'PayPal email',
-    'payouts.momoNumber': 'MoMo number',
+    'payouts.paypalEmailLower': 'PayPal email in 5 to 10 business days',
+    'payouts.momoNumber': 'MoMo number in 5 to 10 business days',
+    'payouts.settingsTab': 'Settings',
+    'payouts.historyTab': 'Payout History',
+    'payouts.savedMethod': 'Saved Payout Method',
+    'payouts.edit': 'Edit',
+    'payouts.remove': 'Remove',
+    'payouts.save': 'Save',
     
     // Subscription Settings
     'subscription.title': 'Subscription Management',
@@ -878,6 +884,7 @@ const translations = {
     'subscription.paymentSuccessful': 'Payment successful',
     'subscription.isNowActive': 'is now active.',
     'subscription.done': 'Done',
+    'subscription.unlimited': 'Unlimited',
     
     // Privacy Settings
     'privacy.title': 'Privacy & Security',
@@ -1249,6 +1256,13 @@ const translations = {
     'upload.ai.steps.suggestingTags': 'Suggesting tags',
     'upload.ai.steps.generatingTitle': 'Generating title',
     'upload.ai.steps.generatingArtwork': 'Generating artwork',
+    // Payout History Table
+    'payouts.date': 'Date',
+    'payouts.amount': 'Amount',
+    'payouts.method': 'Method',
+    'payouts.details': 'Details',
+    'payouts.status': 'Status',
+    'payouts.id': 'Transaction ID',
   },
   fr: {
     // Navigation
@@ -1941,8 +1955,14 @@ const translations = {
     'payouts.salesThisMonth': 'Les ventes de ce mois sont enregistrées automatiquement.',
     'payouts.onFirstNextMonth': 'Le 1er du mois prochain, nous initions votre paiement.',
     'payouts.fundsGoTo': 'Les fonds vont à votre',
-    'payouts.paypalEmailLower': 'email PayPal',
-    'payouts.momoNumber': 'numéro MoMo',
+    'payouts.paypalEmailLower': 'email PayPal dans 5 à 10 jours ouvrés',
+    'payouts.momoNumber': 'numéro MoMo dans 5 à 10 jours ouvrés',
+    'payouts.settingsTab': 'Paramètres',
+    'payouts.historyTab': 'Historique des paiements',
+    'payouts.savedMethod': 'Méthode de paiement enregistrée',
+    'payouts.edit': 'Modifier',
+    'payouts.remove': 'Supprimer',
+    'payouts.save': 'Enregistrer',
     
     // Subscription Settings
     'subscription.title': 'Gestion de l\'Abonnement',
@@ -2485,6 +2505,13 @@ const translations = {
     'upload.ai.steps.suggestingTags': 'Suggestion de tags',
     'upload.ai.steps.generatingTitle': 'Génération du titre',
     'upload.ai.steps.generatingArtwork': 'Génération de l\'artwork',
+    // Payout History Table
+    'payouts.date': 'Date',
+    'payouts.amount': 'Montant',
+    'payouts.method': 'Méthode',
+    'payouts.details': 'Détails',
+    'payouts.status': 'Statut',
+    'payouts.id': 'ID de transaction',
   }
 };
 
