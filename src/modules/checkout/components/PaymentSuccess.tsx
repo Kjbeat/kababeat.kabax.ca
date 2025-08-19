@@ -33,11 +33,21 @@ export function PaymentSuccess() {
           </div>
           <div className="mt-6 space-y-2">
             <div className="text-sm text-muted-foreground">{t('paymentSuccess.totalPaid')}</div>
-            <div className="text-lg font-medium">{typeof total !== 'undefined' ? `$${total}` : "N/A"}</div>
+            <div className="text-lg font-medium">{typeof total !== 'undefined' ? `$${Number(total).toFixed(2)}` : "N/A"}</div>
           </div>
-          <div className="mt-6">
+          <div className="mt-8 space-y-4">
+            <div className="text-base text-primary font-semibold">
+              {t('paymentSuccess.nextStepsTitle') || 'What happens next?'}
+            </div>
+            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-2">
+              <li>{t('paymentSuccess.libraryAccess') || 'Your purchased beats are now available in your Library.'}</li>
+              <li>{t('paymentSuccess.downloadInfo') || 'You can download your beats and access license documents from the Library page.'}</li>
+              <li>{t('paymentSuccess.supportInfo') || 'If you have any issues, contact support or check your email for order details.'}</li>
+            </ul>
+          </div>
+          <div className="mt-8 flex flex-col sm:flex-row gap-2">
             <Button onClick={() => navigate("/library")}>{t('paymentSuccess.goToLibrary')}</Button>
-            <Button variant="outline" className="ml-2" onClick={() => navigate("/browse")}>{t('paymentSuccess.continueBrowsing')}</Button>
+            <Button variant="outline" onClick={() => navigate("/browse")}>{t('paymentSuccess.continueBrowsing')}</Button>
           </div>
         </CardContent>
       </Card>

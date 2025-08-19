@@ -26,7 +26,7 @@ export function OrderSummary() {
               <p className="text-sm text-muted-foreground">{item.licenseType} {t('checkout.license')}</p>
             </div>
             <div className="text-right">
-              <p className="font-semibold">${item.price}</p>
+              <p className="font-semibold">${Number(item.price).toFixed(2)}</p>
               <p className="text-sm text-muted-foreground">{t('checkout.qty')}: {item.quantity}</p>
             </div>
           </div>
@@ -34,7 +34,7 @@ export function OrderSummary() {
         <Separator />
         <div className="flex justify-between items-center font-bold text-lg">
           <span>{t('checkout.total')}</span>
-          <span>${getTotalPrice()}</span>
+          <span>${Number(getTotalPrice()).toFixed(2)}</span>
         </div>
       </CardContent>
     </Card>

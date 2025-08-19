@@ -15,8 +15,15 @@ interface PaymentFormProps {
 
 export function PaymentForm({ onPayment, isProcessing }: PaymentFormProps) {
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [selectedSavedMethod, setSelectedSavedMethod] = useState('');
   const { getTotalPrice } = useCart();
   const { t } = useLanguage();
+  // Example: Replace with actual user payment methods from context or props
+  const savedMethods = [
+    { id: 'pm_1', label: 'Visa **** 1234' },
+    { id: 'pm_2', label: 'Mastercard **** 5678' },
+  ];
 
   return (
     <Card>
@@ -43,9 +50,18 @@ export function PaymentForm({ onPayment, isProcessing }: PaymentFormProps) {
                 <RadioGroupItem value="paypal" id="paypal" />
                 <Label htmlFor="paypal">{t('checkout.paypal')}</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="mobile" id="mobile" />
+                <Label htmlFor="mobile">{t('checkout.mobileMoney') || 'Mobile Money'}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="saved" id="saved" />
+                <Label htmlFor="saved">{t('checkout.savedPaymentMethod') || 'Saved Payment Method'}</Label>
+              </div>
             </RadioGroup>
           </div>
 
+          {/* Card Payment Fields */}
           {paymentMethod === 'card' && (
             <>
               {/* Card Information */}
@@ -128,6 +144,39 @@ export function PaymentForm({ onPayment, isProcessing }: PaymentFormProps) {
             </>
           )}
 
+          {/* Mobile Money Fields */}
+          {paymentMethod === 'mobile' && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">{t('checkout.mobileMoneyDetails') || 'Mobile Money Details'}</h3>
+              <div>
+                <Label htmlFor="mobileNumber">{t('checkout.mobileNumber') || 'Mobile Number'}</Label>
+                <Input
+                  id="mobileNumber"
+                  type="tel"
+                  placeholder="e.g. +233 24 123 4567"
+                  value={mobileNumber}
+                  onChange={e => setMobileNumber(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Saved Payment Method Fields */}
+          {paymentMethod === 'saved' && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">{t('checkout.selectSavedPayment') || 'Select Saved Payment Method'}</h3>
+              <RadioGroup value={selectedSavedMethod} onValueChange={setSelectedSavedMethod}>
+                {savedMethods.map(method => (
+                  <div key={method.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={method.id} id={method.id} />
+                    <Label htmlFor={method.id}>{method.label}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+
           <Button 
             type="submit" 
             className="w-full" 
@@ -139,7 +188,7 @@ export function PaymentForm({ onPayment, isProcessing }: PaymentFormProps) {
                 {t('checkout.processingPayment')}
               </>
             ) : (
-              `${t('checkout.completeOrder')} - $${getTotalPrice()}`
+              `${t('checkout.completeOrder')} - $${Number(getTotalPrice()).toFixed(2)}`
             )}
           </Button>
 

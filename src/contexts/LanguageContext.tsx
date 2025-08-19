@@ -10,7 +10,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Translation dictionary
+// Translatio
 const translations = {
   en: {
     // Navigation
@@ -486,15 +486,27 @@ const translations = {
     'checkout.by': 'by',
     'checkout.qty': 'Qty',
     'checkout.total': 'Total',
+    'checkout.mobileMoney': 'Mobile Money',
+    'checkout.savedPaymentMethod': 'Saved Payment Method',
+    'checkout.mobileMoneyDetails': 'Mobile Money Details',
+    'checkout.mobileNumber': 'Mobile Number',
+    'checkout.selectSavedPayment': 'Select Saved Payment Method',
+  
     
     // Payment Success
     'paymentSuccess.title': 'Payment Success',
+    'paymentSuccess.nextStepsTitle': 'Your purchase was successful!',
     'paymentSuccess.description': 'Thank you for your purchase!',
     'paymentSuccess.orderId': 'Order ID',
     'paymentSuccess.totalPaid': 'Total Paid',
     'paymentSuccess.goToLibrary': 'Go to Library',
     'paymentSuccess.continueBrowsing': 'Continue Browsing',
+    'paymentSuccess.downloadBeats': 'Download Beats',
+    'paymentSuccess.libraryAccess': 'Go to Library',
+    'paymentSuccess.downloadInfo': 'You can download your purchased beats ',
+    'paymentSuccess.supportInfo': 'Download the license documents from the Library page.',
     
+
     // Connections
     'connections.title': 'Connections',
     'connections.description': 'Manage who you follow and discover creators following you.',
@@ -1638,15 +1650,25 @@ const translations = {
     'checkout.by': 'par',
     'checkout.qty': 'Qté',
     'checkout.total': 'Total',
+    'checkout.mobileMoney': 'Mobile Money',
+    'checkout.savedPaymentMethod': 'Méthode de paiement enregistrée',
+    'checkout.mobileMoneyDetails': 'Détails Mobile Money',
+    'checkout.mobileNumber': 'Numéro Mobile',
+    'checkout.selectSavedPayment': 'Sélectionner une méthode enregistrée',
+
     
     // Payment Success
     'paymentSuccess.title': 'Paiement Réussi',
-    'paymentSuccess.description': 'Merci pour votre achat !',
-    'paymentSuccess.orderId': 'ID de Commande',
-    'paymentSuccess.totalPaid': 'Total Payé',
-    'paymentSuccess.goToLibrary': 'Aller à la Bibliothèque',
-    'paymentSuccess.continueBrowsing': 'Continuer à Parcourir',
-    
+'paymentSuccess.nextStepsTitle': 'Votre achat a été effectué avec succès !',
+'paymentSuccess.description': 'Merci pour votre achat !',
+'paymentSuccess.orderId': 'ID de Commande',
+'paymentSuccess.totalPaid': 'Total Payé',
+'paymentSuccess.goToLibrary': 'Aller à la Bibliothèque',
+'paymentSuccess.continueBrowsing': 'Continuer à Parcourir',
+'paymentSuccess.downloadBeats': 'Télécharger les Beats',
+'paymentSuccess.libraryAccess': 'Accéder à la Bibliothèque',
+'paymentSuccess.downloadInfo': 'Vous pouvez télécharger vos beats achetés',
+'paymentSuccess.supportInfo': 'Téléchargez les documents de licence depuis la page Bibliothèque.',
     // Connections
     'connections.title': 'Connexions',
     'connections.description': 'Gérez qui vous suivez et découvrez les créateurs qui vous suivent.',
