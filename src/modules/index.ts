@@ -10,7 +10,7 @@ export * from './explore';
 export * from './dashboard';
 
 // Upload Module
-export * from './upload';
+export * from './upload-forDev';
 
 // Checkout Module
 export * from './checkout';
@@ -31,10 +31,10 @@ export * from './favorites';
 export * from './notifications';
 
 // Playlists Module (includes list + detail)
-export * from './playlists';
+export * from './playlists-forDev';
 
 // My Beats Module
-export * from './my-beats';
+export * from './my-beats-forDev';
 
 // Beat Detail Module
 export * from './beat';
