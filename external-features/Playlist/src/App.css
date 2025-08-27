@@ -1,0 +1,254 @@
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+html, body { max-width:100%; overflow-x:hidden; }
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* --- BeatGrid & BeatCard Layout Enhancements --- */
+/* Base (mobile-first) */
+/* Use CSS custom props for fluid sizing: caller sets --beat-col-min / --beat-col-max (defaults below) */
+.beat-grid { 
+  --beat-col-min: 150px;
+  --beat-col-max: 280px;
+  /* Fluid interpolation between min and max viewport widths */
+  /* We interpolate column basis with clamp ensuring it stays within provided bounds */
+  grid-template-columns: repeat(auto-fill,minmax(clamp(var(--beat-col-min), 18vw, var(--beat-col-max)),1fr));
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 360px) {
+  .beat-grid { 
+    grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+    --beat-col-min: 140px;
+    --beat-col-max: 200px;
+  }
+  .beat-card-fixed .beat-artwork-wrapper { aspect-ratio: 1/1; }
+  .beat-card-fixed .beat-card-body { gap:0.5rem; }
+  .beat-card-fixed .beat-artwork-wrapper img { object-fit:cover; }
+}
+
+@media (min-width: 361px) and (max-width: 420px) {
+  .beat-grid { 
+    --beat-col-min: 150px; 
+    --beat-col-max: 240px; 
+  }
+}
+
+@media (min-width: 421px) and (max-width: 640px) {
+  .beat-grid { 
+    --beat-col-min: 160px; 
+    --beat-col-max: 260px; 
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 768px) {
+  .beat-grid { 
+    --beat-col-min: 180px; 
+    --beat-col-max: 280px; 
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .beat-grid { 
+    --beat-col-min: 200px; 
+    --beat-col-max: 300px; 
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .beat-grid { 
+    --beat-col-min: 220px; 
+    --beat-col-max: 320px; 
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1599px) {
+  .beat-grid { 
+    --beat-col-min: 240px; 
+    --beat-col-max: 340px; 
+  }
+}
+
+@media (min-width: 1600px) and (max-width: 1919px) {
+  .beat-grid { 
+    --beat-col-min: 250px; 
+    --beat-col-max: 360px; 
+  }
+}
+
+@media (min-width: 1920px) {
+  .beat-grid { 
+    --beat-col-min: 270px; 
+    --beat-col-max: 400px; 
+  }
+}
+
+/* Text size adjustments for very small screens */
+@media (max-width: 420px) {
+  .beat-card-fixed .beat-card-body .text-lg { font-size:0.95rem; }
+  .beat-card-fixed .beat-card-body .text-sm { font-size:0.75rem; }
+  .beat-card-fixed .beat-card-body .text-xs { font-size:0.7rem; }
+}
+
+/* Consistent BeatCard sizing utility */
+.beat-card-fixed { display:flex; flex-direction:column; height:100%; }
+.beat-card-fixed .beat-card-body { display:flex; flex-direction:column; gap:0.5rem; flex:1; }
+.beat-card-fixed .beat-artwork-wrapper { position:relative; width:100%; aspect-ratio:1/1; }
+.beat-card-fixed .beat-artwork-wrapper > * { position:absolute; inset:0; }
+.beat-card-fixed:focus-visible { outline:2px solid hsl(var(--primary)); outline-offset:2px; }
+.beat-card-fixed .price-original { text-decoration:line-through; opacity:0.55; }
+.beat-card-fixed .price-discount { color:hsl(var(--destructive)); font-weight:600; }
+
+/* Fancy hover ring */
+.beat-card-fixed.group { position:relative; }
+.beat-card-fixed.group::after { content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background:linear-gradient(120deg, hsl(var(--primary)/0.5), transparent 40%, hsl(var(--primary)/0.4)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:opacity .4s; pointer-events:none; }
+.beat-card-fixed.group:hover::after, .beat-card-fixed.group:focus-within::after { opacity:1; }
+
+/* Skeleton pulse */
+.skeleton-pulse { position:relative; overflow:hidden; background:linear-gradient(90deg, hsl(var(--muted)), hsl(var(--muted)/0.6), hsl(var(--muted))); background-size:200% 100%; animation:skeleton-move 1.2s linear infinite; }
+@keyframes skeleton-move { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+
+/* Horizontal scroll utilities */
+.horizontal-scroll { display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+.horizontal-scroll::-webkit-scrollbar { height:8px; }
+.horizontal-scroll::-webkit-scrollbar-track { background:transparent; }
+.horizontal-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:4px; }
+.scroll-snap-x { scroll-snap-type:x mandatory; }
+.scroll-snap-x > * { scroll-snap-align:start; }
+
+/* Hide scrollbar variant */
+.no-scrollbar { scrollbar-width:none; }
+.no-scrollbar::-webkit-scrollbar { display:none; }
+
+/* Edge fade for horizontal scrollers */
+.horizontal-scroll.group { position:relative; }
+.horizontal-scroll.group::before,
+.horizontal-scroll.group::after { content:""; position:sticky; top:0; width:40px; height:100%; pointer-events:none; z-index:5; }
+.horizontal-scroll.group::before { left:0; background:linear-gradient(to right,var(--background,#0a0a0a),transparent); }
+.horizontal-scroll.group::after { right:0; background:linear-gradient(to left,var(--background,#0a0a0a),transparent); }
+
+/* Responsive utilities */
+.responsive-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Sidebar improvements */
+[data-sidebar="sidebar"] {
+  transition: width 0.2s ease-in-out;
+}
+
+/* Ensure proper collapsing behavior */
+.group\/sidebar-wrapper[data-state="collapsed"] [data-sidebar="sidebar"] {
+  width: var(--sidebar-width-icon);
+}
+
+.group\/sidebar-wrapper[data-state="expanded"] [data-sidebar="sidebar"] {
+  width: var(--sidebar-width);
+}
+
+/* Improve sidebar content layout when collapsed */
+[data-sidebar="sidebar"][data-state="collapsed"] .sidebar-menu-button {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Fix tooltip positioning */
+[data-radix-popper-content-wrapper] {
+  z-index: 100;
+}
+
+/* === Infinite Scroll Animations & Helpers === */
+@keyframes fade-in-up { 0% { opacity:0; transform:translateY(14px) scale(.98);} 60% { opacity:1;} 100% { opacity:1; transform:translateY(0) scale(1);} }
+@keyframes spin-slow { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
+@keyframes ping-slow { 0% { transform:scale(.9); opacity:.6;} 70% { opacity:0;} 100% { opacity:0;} }
+@keyframes fade-pulse { 0%,100% { opacity:.85;} 50% { opacity:1;} }
+@keyframes pulse-fast { 0%,100% { opacity:.45;} 50% { opacity:.75;} }
+.animate-fade-in-up { animation:fade-in-up .6s cubic-bezier(.16,.84,.44,1) both; }
+.animate-spin-slow { animation:spin-slow 2.4s linear infinite; }
+.animate-ping-slow { animation:ping-slow 1.8s ease-out infinite; }
+.animate-fade-pulse { animation:fade-pulse 1.2s ease-in-out infinite; }
+.animate-pulse-fast { animation:pulse-fast 1.1s ease-in-out infinite; }
+
+/* Variants for newly loaded beat cards */
+@keyframes pop-in {
+  0% { opacity:0; transform:scale(.85) translateY(20px); }
+  60% { opacity:1; transform:scale(1.02) translateY(-2px); }
+  100% { opacity:1; transform:scale(1) translateY(0); }
+}
+@keyframes slide-blur-in {
+  0% { opacity:0; transform:translateY(28px); filter:blur(8px); }
+  50% { opacity:1; }
+  100% { opacity:1; transform:translateY(0); filter:blur(0); }
+}
+@keyframes flip-in {
+  0% { opacity:0; transform:perspective(600px) rotateX(18deg) translateY(16px); }
+  60% { opacity:1; }
+  100% { opacity:1; transform:perspective(600px) rotateX(0) translateY(0); }
+}
+@keyframes reveal-in {
+  0% { opacity:0; clip-path:inset(0 0 100% 0); }
+  60% { opacity:1; }
+  100% { opacity:1; clip-path:inset(0 0 0 0); }
+}
+.anim-new-beat-pop { animation:pop-in .7s cubic-bezier(.22,.97,.36,1) both; }
+.anim-new-beat-slide-blur { animation:slide-blur-in .65s cubic-bezier(.16,.84,.44,1) both; }
+.anim-new-beat-flip { animation:flip-in .75s cubic-bezier(.25,.8,.3,1) both; transform-origin:50% 60%; }
+.anim-new-beat-reveal { animation:reveal-in .7s ease-out both; }
