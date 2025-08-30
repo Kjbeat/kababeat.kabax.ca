@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ArtworkUploadStep } from '@/modules/upload-forDev/components/ArtworkUploadStep';
-import { BeatInfoStep } from '@/modules/upload-forDev/components/BeatInfoStep';
-import { CollaboratorSplitStep } from '@/modules/upload-forDev/components/CollaboratorSplitStep';
-import { ReviewStep } from '@/modules/upload-forDev/components/ReviewStep';
-import { ProgressStep } from '@/modules/upload-forDev/components/ProgressStep';
-import { BeatFormData, DEFAULT_FORM_DATA } from '@/modules/upload-forDev/types';
+import { ArtworkUploadStep } from '../../upload/components/ArtworkUploadStep';
+import { BeatInfoStep } from '../../upload/components/BeatInfoStep';
+import { CollaboratorSplitStep } from '../../upload/components/CollaboratorSplitStep';
+import { ReviewStep } from '../../upload/components/ReviewStep';
+import { ProgressStep } from '../../upload/components/ProgressStep';
+import { BeatFormData, DEFAULT_FORM_DATA } from '../../upload/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Beat } from './mockBeats';
 

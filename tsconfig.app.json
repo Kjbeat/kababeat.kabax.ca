@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "OLD MODULE/playlists-forDev", "OLD MODULE/my-beats-forDev", "OLD MODULE/upload-forDev"]
 }
