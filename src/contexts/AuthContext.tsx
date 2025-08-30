@@ -95,9 +95,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userProfile) {
             setUser(userProfile);
           } else {
-            // If no profile found, sign out the user
-            await supabase.auth.signOut();
-            setUser(null);
+            console.warn('User profile not found during initialization, but keeping session');
+            // Don't sign out - let them stay logged in but they might need to complete profile
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              username: session.user.email?.split('@')[0] || 'user',
+              display_name: session.user.email?.split('@')[0] || 'user',
+              avatar_url: null,
+              bio: null,
+              country: 'Nigeria',
+              is_verified: false,
+              is_creator: false,
+              created_at: session.user.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
           }
         } else {
           setUser(null);
@@ -117,12 +129,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          const userProfile = await getUserProfile(session.user.id);
-          setUser(userProfile);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
+                  if (event === 'SIGNED_IN' && session?.user) {
+            const userProfile = await getUserProfile(session.user.id);
+            if (userProfile) {
+              setUser(userProfile);
+            } else {
+              console.warn('Could not load user profile after sign in');
+              // Don't set user to null here - let the user stay signed in
+              // but they might need to complete their profile
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+          }
         
         setLoading(false);
       }
@@ -148,7 +166,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userProfile) {
           setUser(userProfile);
         } else {
-          throw new Error('User profile not found');
+          console.warn('User profile not found, but allowing login');
+          // Create a basic user object from auth data
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            username: data.user.email?.split('@')[0] || 'user',
+            display_name: data.user.email?.split('@')[0] || 'user',
+            avatar_url: null,
+            bio: null,
+            country: 'Nigeria',
+            is_verified: false,
+            is_creator: false,
+            created_at: data.user.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
         }
       }
     } catch (error) {

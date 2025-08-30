@@ -38,7 +38,7 @@ export function AuthCallback() {
         if (session?.user) {
           // Check if user profile exists
           const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
+            .from('kababeat_user_profiles')
             .select('*')
             .eq('user_id', session.user.id)
             .single();
@@ -80,7 +80,7 @@ export function AuthCallback() {
     try {
       // Check if username is available
       const { data: existingUser } = await supabase
-        .from('user_profiles')
+        .from('kababeat_user_profiles')
         .select('username')
         .eq('username', username)
         .single();
@@ -100,7 +100,7 @@ export function AuthCallback() {
 
       // Create user profile
       const { error: profileError } = await supabase
-        .from('user_profiles')
+        .from('kababeat_user_profiles')
         .insert({
           user_id: user.id,
           username,

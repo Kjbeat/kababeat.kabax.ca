@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { useServices } from '@/providers/ServicesProvider';
-import { useAuth } from '@/providers/AuthProvider';
+import { useServices } from '../../providers/ServicesProvider';
+import { useAuth } from '../../providers/AuthProvider';
 import { Beat, BeatFormData, BeatFilter } from '@/core/types';
 
 export function useMyBeatsAPI() {

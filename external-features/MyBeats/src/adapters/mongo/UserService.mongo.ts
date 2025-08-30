@@ -1,5 +1,5 @@
 import { UserService } from '../../core/services/UserService';
-import { User, UserProfile, AuthUser } from '../../core/types';
+import { User, UserProfile, AuthUser } from '@/core/types/user';
 
 export class UserServiceMongo implements UserService {
   async getCurrentUser(): Promise<AuthUser | null> {

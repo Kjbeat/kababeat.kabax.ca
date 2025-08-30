@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { ServicesProvider } from "@/providers/ServicesProvider";
+import { AuthProvider } from "./providers/AuthProvider";
+import { ServicesProvider } from "./providers/ServicesProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { MediaPlayerProvider } from "@/contexts/MediaPlayerContext";
 import { CartProvider } from "@/contexts/CartContext";

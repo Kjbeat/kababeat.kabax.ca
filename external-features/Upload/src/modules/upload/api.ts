@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useServices } from '@/providers/ServicesProvider';
-import { useAuth } from '@/providers/AuthProvider';
+import { useServices } from '../../providers/ServicesProvider';
+import { useAuth } from '../../providers/AuthProvider';
 import { BeatFormData, BeatCollaborator, UploadDraft, UploadFile, UploadPricing } from '@/core/types';
 
 export function useUploadAPI() {
