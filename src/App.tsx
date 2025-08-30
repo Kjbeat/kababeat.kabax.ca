@@ -15,7 +15,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { SidebarProvider } from "@/components/ui/sidebar";
 // Module imports
 import { LandingLayout } from "@/modules/landing";
-import { LoginForm, SignupForm, AuthCallback } from "@/modules/auth";
+import { LoginForm, SignupForm, AuthCallback, ResetPasswordForm } from "@/modules/auth";
 import { BrowseLayout } from "@/modules/browse";
 import { UploadBeatLayout } from "../external-features/Upload/src/modules/upload";
 import { LibraryLayout } from "@/modules/library";
@@ -76,6 +76,7 @@ function App() {
                       <Route path="/login" element={<LoginForm />} />
                       <Route path="/signup" element={<SignupForm />} />
                       <Route path="/auth/callback" element={<AuthCallback />} />
+                      <Route path="/reset-password" element={<ResetPasswordForm />} />
                       <Route path="/" element={<LandingLayout />} />
 
                       {/* App routes with auth-aware routing - wrapped in SidebarProvider */}

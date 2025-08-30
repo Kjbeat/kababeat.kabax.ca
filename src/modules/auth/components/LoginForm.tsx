@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,35 +52,23 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login, loginWithGoogle, loading } = useAuth();
+  const { login, loginWithGoogle, loading, requestPasswordReset } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
 
   const [resetOpen, setResetOpen] = useState(false);
-  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
   const [resetEmail, setResetEmail] = useState("");
-  const [resetCode, setResetCode] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  // TODO: Integrate with your auth backend / context
+  // Supabase password reset integration
   const requestResetCode = async (email: string) => {
-    // Example: await api.post('/auth/password/forgot', { email })
-    await new Promise((r) => setTimeout(r, 600));
-  };
-  const verifyResetCode = async (email: string, code: string) => {
-    // Example: await api.post('/auth/password/verify', { email, code })
-    await new Promise((r) => setTimeout(r, 600));
-  };
-  const commitNewPassword = async (email: string, code: string, password: string) => {
-    // Example: await api.post('/auth/password/reset', { email, code, password })
-    await new Promise((r) => setTimeout(r, 600));
+    await requestPasswordReset(email);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,7 +204,7 @@ export function LoginForm() {
                 </div>
               </div>
               <div className="text-right -mt-1">
-                <button type="button" className="text-xs text-primary hover:underline" onClick={() => { setResetOpen(true); setResetStep(1); setResetEmail(""); setResetCode(""); setNewPass(""); setConfirmPass(""); }}>
+                <button type="button" className="text-xs text-primary hover:underline" onClick={() => { setResetOpen(true); setResetEmail(""); setResetSent(false); }}>
                   {t('auth.forgotPassword')}
                 </button>
               </div>
@@ -241,127 +230,76 @@ export function LoginForm() {
             <DialogHeader>
               <DialogTitle>{t('auth.resetYourPassword')}</DialogTitle>
               <DialogDescription>
-                {resetStep === 1 && t('auth.enterEmailForReset')}
-                {resetStep === 2 && t('auth.checkEmailForCode')}
-                {resetStep === 3 && t('auth.passwordUpdated')}
+                {!resetSent ? 
+                  "Enter your email address and we'll send you a link to reset your password." :
+                  "Check your email for a password reset link."
+                }
               </DialogDescription>
             </DialogHeader>
 
-            {resetStep === 1 && (
+            {!resetSent ? (
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">{t('auth.email')}</Label>
-                  <Input id="reset-email" type="email" placeholder="you@example.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} />
+                  <Input 
+                    id="reset-email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    value={resetEmail} 
+                    onChange={(e) => setResetEmail(e.target.value)} 
+                  />
                 </div>
               </div>
-            )}
-
-            {resetStep === 2 && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-code">{t('auth.sixDigitCode')}</Label>
-                  <Input id="reset-code" inputMode="numeric" maxLength={6} placeholder="123456" value={resetCode} onChange={(e) => setResetCode(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-pass">{t('auth.newPassword')}</Label>
-                  <div className="relative">
-                    <Input id="new-pass" type={showNewPass ? "text" : "password"} value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                      onClick={() => setShowNewPass((v) => !v)}
-                      aria-label={showNewPass ? t('auth.hidePassword') : t('auth.showPassword')}
-                    >
-                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-pass">{t('auth.confirmPassword')}</Label>
-                  <div className="relative">
-                    <Input id="confirm-pass" type={showConfirmPass ? "text" : "password"} value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                      onClick={() => setShowConfirmPass((v) => !v)}
-                      aria-label={showConfirmPass ? t('auth.hidePassword') : t('auth.showPassword')}
-                    >
-                      {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {resetStep === 3 && (
+            ) : (
               <div className="text-sm">
-                <div className="rounded-md border p-3 bg-muted/30">{t('auth.passwordUpdatedFor')} <span className="font-medium">{resetEmail}</span>.</div>
+                <div className="rounded-md border p-3 bg-muted/30">
+                  Password reset link sent to <span className="font-medium">{resetEmail}</span>.
+                  Check your email and click the link to reset your password.
+                </div>
               </div>
             )}
 
             <DialogFooter className="flex items-center justify-between gap-2">
               <div className="text-xs text-muted-foreground">
-                {resetStep < 3 ? (
+                {!resetSent ? (
                   <>
-                    <span>{t('auth.needHelp')} </span>
-                    <a className="underline" href="/help/security" onClick={(e) => e.stopPropagation()}>{t('auth.securityHelp')}</a>
+                    <span>Need help? </span>
+                    <a className="underline" href="/help/security" onClick={(e) => e.stopPropagation()}>Security help</a>
                   </>
                 ) : (
-                  <span>{t('auth.allSet')} 🎉</span>
+                  <span>Check your spam folder if you don't see the email.</span>
                 )}
               </div>
 
-              {resetStep === 1 && (
+              {!resetSent ? (
                 <Button
                   onClick={async () => {
                     setResetLoading(true);
                     try {
                       await requestResetCode(resetEmail);
-                      toast({ title: t('auth.checkYourEmail'), description: t('auth.sentSixDigitCode') });
-                      setResetStep(2);
-                    } catch (e) {
-                      toast({ title: t('auth.couldntSendCode'), description: t('auth.pleaseTryAgain'), variant: "destructive" });
+                      toast({ 
+                        title: "Reset link sent", 
+                        description: "Check your email for a password reset link." 
+                      });
+                      setResetSent(true);
+                    } catch (e: any) {
+                      toast({ 
+                        title: "Couldn't send reset link", 
+                        description: e.message || "Please try again.", 
+                        variant: "destructive" 
+                      });
                     } finally {
                       setResetLoading(false);
                     }
                   }}
                   disabled={!resetEmail || resetLoading}
                 >
-                  {resetLoading ? t('auth.sending') : t('auth.sendCode')}
+                  {resetLoading ? "Sending..." : "Send Reset Link"}
                 </Button>
-              )}
-
-              {resetStep === 2 && (
-                <Button
-                  onClick={async () => {
-                    if (!resetCode || newPass.length < 8 || newPass !== confirmPass) {
-                      toast({ title: t('auth.checkTheForm'), description: t('auth.enterCodeAndMatchingPasswords'), variant: "destructive" });
-                      return;
-                    }
-                    setResetLoading(true);
-                    try {
-                      await verifyResetCode(resetEmail, resetCode);
-                      await commitNewPassword(resetEmail, resetCode, newPass);
-                      toast({ title: t('auth.passwordUpdated'), description: t('auth.canSignInWithNewPassword') });
-                      setResetStep(3);
-                    } catch (e) {
-                      toast({ title: t('auth.couldntResetPassword'), description: t('auth.checkCodeAndTryAgain'), variant: "destructive" });
-                    } finally {
-                      setResetLoading(false);
-                    }
-                  }}
-                  disabled={!resetCode || !newPass || !confirmPass || resetLoading}
-                >
-                  {resetLoading ? t('auth.updating') : t('auth.updatePassword')}
+              ) : (
+                <Button onClick={() => { setResetOpen(false); setResetSent(false); }}>
+                  Close
                 </Button>
-              )}
-
-              {resetStep === 3 && (
-                <Button onClick={() => { setResetOpen(false); setResetStep(1); }}>{t('auth.close')}</Button>
               )}
             </DialogFooter>
           </DialogContent>

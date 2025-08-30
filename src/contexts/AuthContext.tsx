@@ -25,6 +25,9 @@ interface AuthContextType {
   logout: () => Promise<void>;
   loading: boolean;
   updateProfile: (updates: Partial<User>) => Promise<void>;
+  // Forgot password functions
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -350,6 +353,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Request password reset email
+  const requestPasswordReset = async (email: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset password (called from reset link)
+  const resetPassword = async (newPassword: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -361,6 +402,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       loading,
       updateProfile,
+      requestPasswordReset,
+      resetPassword,
     }}>
       {children}
     </AuthContext.Provider>
