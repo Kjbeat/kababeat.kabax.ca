@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getUserProfile = async (userId: string): Promise<User | null> => {
     try {
       const { data, error } = await supabase
-        .from('kababeat_kababeat_user_profiles')
+        .from('kababeat_user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
