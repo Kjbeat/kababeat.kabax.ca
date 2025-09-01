@@ -1,0 +1,8 @@
+export { default as authRoutes } from './auth.routes';
+export { default as userRoutes } from './user.routes';
+export { default as beatRoutes } from './beat.routes';
+export { default as playlistRoutes } from './playlist.routes';
+export { default as mediaRoutes } from './media.routes';
+export { default as browseRoutes } from './browse.routes';
+export { default as connectionRoutes } from './connection.routes';
+export { default as creatorRoutes } from './creator.routes';
