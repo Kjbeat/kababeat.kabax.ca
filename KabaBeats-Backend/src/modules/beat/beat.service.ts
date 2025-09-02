@@ -90,7 +90,7 @@ export class BeatService implements IBeatService {
       if (stemsFile) {
         stemsUploadRequest = await this.mediaService.generateUploadUrl({
           userId,
-          fileType: 'audio', // Using audio type for stems
+          fileType: 'stems', // Using stems type for stems
           originalName: stemsFile.originalname,
           contentType: stemsFile.mimetype,
           size: stemsFile.size,

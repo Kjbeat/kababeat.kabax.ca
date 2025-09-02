@@ -57,7 +57,7 @@ export class MediaService implements IMediaService {
   async confirmUpload(
     userId: string,
     key: string,
-    fileType: 'audio' | 'image' | 'profile' | 'artwork',
+    fileType: 'audio' | 'image' | 'profile' | 'artwork' | 'stems',
     beatId?: string
   ): Promise<IMediaFile> {
     try {

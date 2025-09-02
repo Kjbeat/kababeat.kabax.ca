@@ -39,13 +39,13 @@ export class MediaController implements IMediaController {
       }
 
       // Validate file type
-      if (!['audio', 'image', 'profile', 'artwork'].includes(fileType)) {
+      if (!['audio', 'image', 'profile', 'artwork', 'stems'].includes(fileType)) {
         throw new CustomError('Invalid file type', 400);
       }
 
       // Validate beatId for beat-related uploads
-      if (['audio', 'artwork'].includes(fileType) && !beatId) {
-        throw new CustomError('Beat ID required for audio and artwork uploads', 400);
+      if (['audio', 'artwork', 'stems'].includes(fileType) && !beatId) {
+        throw new CustomError('Beat ID required for audio, artwork, and stems uploads', 400);
       }
 
       const uploadRequest: UploadRequest = {
@@ -95,7 +95,7 @@ export class MediaController implements IMediaController {
       }
 
       // Validate file type
-      if (!['audio', 'image', 'profile', 'artwork'].includes(fileType)) {
+      if (!['audio', 'image', 'profile', 'artwork', 'stems'].includes(fileType)) {
         throw new CustomError('Invalid file type', 400);
       }
 

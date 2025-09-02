@@ -1,7 +1,7 @@
 export const mediaConfig = {
   // File size limits (in bytes)
   maxFileSize: {
-    audio: 100 * 1024 * 1024, // 100MB
+    audio: 200 * 1024 * 1024, // 200MB
     image: 10 * 1024 * 1024,  // 10MB
   },
 

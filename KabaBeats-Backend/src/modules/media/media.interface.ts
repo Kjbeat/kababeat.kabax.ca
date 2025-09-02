@@ -3,7 +3,7 @@ import { ChunkedUploadSession, ChunkUploadRequest } from '@/utils/chunkedUpload'
 
 export interface IMediaService {
   generateUploadUrl(request: UploadRequest): Promise<UploadResponse>;
-  confirmUpload(userId: string, key: string, fileType: 'audio' | 'image' | 'profile' | 'artwork', beatId?: string): Promise<IMediaFile>;
+  confirmUpload(userId: string, key: string, fileType: 'audio' | 'image' | 'profile' | 'artwork' | 'stems', beatId?: string): Promise<IMediaFile>;
   getDownloadUrl(userId: string, fileId: string, expiresIn?: number): Promise<string>;
   deleteFile(userId: string, fileId: string): Promise<void>;
   getUserFiles(userId: string, fileType?: string, beatId?: string): Promise<IMediaFile[]>;
@@ -65,7 +65,7 @@ export interface IMediaController {
 
 export interface UploadRequest {
   userId: string;
-  fileType: 'audio' | 'image' | 'profile' | 'artwork';
+  fileType: 'audio' | 'image' | 'profile' | 'artwork' | 'stems';
   originalName: string;
   contentType: string;
   size: number;

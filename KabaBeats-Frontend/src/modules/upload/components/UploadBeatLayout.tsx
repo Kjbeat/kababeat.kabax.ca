@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft, Upload } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -552,18 +553,42 @@ export function UploadBeatLayout() {
           {renderStepContent()}
         </div>
 
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="mb-6">
-            <UploadProgress
-              steps={uploadSteps}
-              currentStep={currentUploadStep}
-              overallProgress={uploadProgress}
-              isUploading={isUploading}
-              error={uploadError}
-            />
-          </div>
-        )}
+        {/* Upload Progress Modal */}
+        <Dialog open={isUploading} onOpenChange={() => {}}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/20 to-fuchsia-500/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Upload className="relative h-5 w-5 text-primary" />
+                </div>
+                Publishing Your Beat
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <UploadProgress
+                steps={uploadSteps}
+                currentStep={currentUploadStep}
+                overallProgress={uploadProgress}
+                isUploading={isUploading}
+                error={uploadError}
+              />
+            </div>
+            {uploadError && (
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setUploadError(null);
+                    setIsUploading(false);
+                  }}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Navigation */}
         <div className="flex items-center justify-between">

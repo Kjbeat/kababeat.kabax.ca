@@ -65,10 +65,7 @@ export function ReviewStep({ formData, onPublish, onSaveDraft, onSchedule, terms
                   <div><strong>{t('upload.beatInfo.key')}:</strong> {formData.key || t('upload.review.notSet')}</div>
                   <div><strong>{t('upload.beatInfo.genre')}:</strong> {formData.genre || t('upload.review.notSet')}</div>
                   <div><strong>{t('upload.beatInfo.mood')}:</strong> {formData.mood || t('upload.review.notSet')}</div>
-                  <div><strong>{t('upload.beatInfo.basePrice')}:</strong> ${formData.basePrice || 0}</div>
-                  <div><strong>{t('upload.beatInfo.salePrice')}:</strong> ${formData.salePrice || formData.basePrice || 0}</div>
-                  <div><strong>{t('upload.beatInfo.isExclusive')}:</strong> {formData.isExclusive ? "Yes" : "No"}</div>
-                  <div><strong>{t('upload.beatInfo.allowFreeDownload')}:</strong> {formData.allowFreeDownload ? "Yes" : "No"}</div>
+                  <div><strong>Free Download:</strong> {formData.allowFreeDownload ? "Yes" : "No"}</div>
                 </div>
               </div>
 

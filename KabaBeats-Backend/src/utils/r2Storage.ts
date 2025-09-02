@@ -5,7 +5,7 @@ import { logger } from '@/config/logger';
 export const FILE_TYPES = {
   AUDIO: {
     allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/m4a', 'audio/flac'] as string[],
-    maxSize: 150 * 1024 * 1024, // 50MB
+    maxSize: 200 * 1024 * 1024, // 200MB
     folder: 'audio',
   },
   IMAGE: {
@@ -15,13 +15,18 @@ export const FILE_TYPES = {
   },
   PROFILE_IMAGE: {
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as string[],
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 25 * 1024 * 1024, // 5MB
     folder: 'profiles',
   },
   BEAT_ARTWORK: {
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as string[],
-    maxSize: 25 * 1024 * 1024, // 10MB
+    maxSize: 25 * 1024 * 1024, // 25MB
     folder: 'artwork',
+  },
+  STEMS: {
+    allowedTypes: ['application/zip', 'application/x-zip-compressed'] as string[],
+    maxSize: 5000 * 1024 * 1024, // 500MB
+    folder: 'stems',
   },
 } as const;
 
@@ -46,11 +51,15 @@ export const STORAGE_PATHS = {
   // Processed files
   PROCESSED_AUDIO: (userId: string, beatId: string, filename: string) => 
     `processed/audio/${userId}/${beatId}/${filename}`,
+  
+  // Stems files
+  BEAT_STEMS: (userId: string, beatId: string, filename: string) => 
+    `stems/beats/${userId}/${beatId}/${filename}`,
 } as const;
 
 export interface UploadRequest {
   userId: string;
-  fileType: 'audio' | 'image' | 'profile' | 'artwork';
+  fileType: 'audio' | 'image' | 'profile' | 'artwork' | 'stems';
   originalName: string;
   contentType: string;
   size: number;
@@ -158,6 +167,10 @@ const generateFileKey = (request: UploadRequest): string => {
     case 'image':
       return STORAGE_PATHS.TEMP_UPLOAD(request.userId, `${timestamp}-${randomString}.${extension}`);
     
+    case 'stems':
+      if (!request.beatId) throw new Error('Beat ID required for stems uploads');
+      return STORAGE_PATHS.BEAT_STEMS(request.userId, request.beatId, `${timestamp}-${randomString}.${extension}`);
+    
     default:
       throw new Error(`Unknown file type: ${request.fileType}`);
   }
@@ -176,6 +189,8 @@ const getFileConfig = (fileType: string) => {
       return FILE_TYPES.PROFILE_IMAGE;
     case 'artwork':
       return FILE_TYPES.BEAT_ARTWORK;
+    case 'stems':
+      return FILE_TYPES.STEMS;
     default:
       throw new Error(`Unknown file type: ${fileType}`);
   }
