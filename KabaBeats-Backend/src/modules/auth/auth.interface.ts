@@ -108,6 +108,8 @@ export interface IAuthService {
       radius: number;
     };
   } | null>;
+  verifyEmailOTP(email: string, otp: string): Promise<AuthResponse>;
+  resendVerificationOTP(email: string): Promise<void>;
 }
 
 // Auth controller methods interface
@@ -129,4 +131,6 @@ export interface IAuthController {
   deleteAccount(req: AuthRequest, res: any, next: any): Promise<void>;
   updateThemePreferences(req: AuthRequest, res: any, next: any): Promise<void>;
   getThemePreferences(req: AuthRequest, res: any, next: any): Promise<void>;
+  verifyEmailOTP(req: AuthRequest, res: any, next: any): Promise<void>;
+  resendVerificationOTP(req: AuthRequest, res: any, next: any): Promise<void>;
 }

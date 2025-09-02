@@ -94,7 +94,22 @@ export function LoginForm() {
       });
       navigate("/explore");
     } catch (err) {
-      setError(t('auth.invalidCredentials'));
+      const errorMessage = err instanceof Error ? err.message : t('auth.invalidCredentials');
+      console.log('Login error message:', errorMessage); // Debug log
+      
+      // Check if it's an unverified email error
+      if (errorMessage.includes('Email not verified')) {
+        console.log('Redirecting to OTP verification page'); // Debug log
+        // Store email for OTP verification
+        localStorage.setItem('pending-verification-email', email);
+        toast({
+          title: t('auth.emailNotVerified'),
+          description: t('auth.checkEmailForVerification'),
+        });
+        navigate("/verify-email");
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
@@ -139,13 +154,11 @@ export function LoginForm() {
             <h1 className="text-2xl font-bold">KABABEATS</h1>
             <Badge variant="secondary" className="ml-1">v2</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{t('auth.signInToContinue')}</p>
         </div>
 
         <Card className="border shadow-sm">
           <CardHeader>
             <CardTitle>{t('auth.welcomeBack')}</CardTitle>
-            <CardDescription>{t('auth.useEmailOrGoogle')}</CardDescription>
           </CardHeader>
           
           <CardContent>

@@ -9,6 +9,7 @@ export const connectDatabase = async (): Promise<void> => {
       throw new Error('MONGODB_URI environment variable is not defined');
     }
 
+
     const options = {
       maxPoolSize: 10, // Maintain up to 10 socket connections
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds

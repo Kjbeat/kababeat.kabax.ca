@@ -4,6 +4,8 @@ import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
 import { generateToken, generateRefreshToken, verifyRefreshToken, comparePassword } from '@/utils/auth';
 import { IUser } from '@/types';
+import { emailService } from '@/utils/emailService';
+import { generateOTP, generateOTPExpiration, isOTPExpired } from '@/utils/otpGenerator';
 
 export class AuthService implements IAuthService {
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -29,13 +31,19 @@ export class AuthService implements IAuthService {
         }
       }
 
+      // Generate OTP for email verification
+      const otp = generateOTP();
+      const otpExpiration = generateOTPExpiration();
+
       // Create new user
       const user = new User({
         ...data,
-        role: 'user',
+        role: 'creator',
         isVerified: false,
         isActive: true,
         refreshTokens: [],
+        emailVerificationOTP: otp,
+        emailVerificationExpires: otpExpiration,
       });
 
       console.log('AuthService: Creating user with data:', {
@@ -48,6 +56,20 @@ export class AuthService implements IAuthService {
       await user.save();
       
       console.log('AuthService: User created successfully with ID:', user._id);
+
+      // Send verification email
+      try {
+        await emailService.sendEmail({
+          to: user.email,
+          subject: 'Verify Your KabaBeats Account',
+          html: emailService.generateOTPEmailHTML(otp, user.username, user.email),
+          text: emailService.generateOTPEmailText(otp, user.username, user.email),
+        });
+        logger.info(`Verification email sent to ${user.email}`);
+      } catch (emailError) {
+        logger.error('Failed to send verification email:', emailError);
+        // Don't throw error here - user is created, they can request resend
+      }
 
       // Generate tokens
       const accessToken = generateToken({
@@ -93,6 +115,33 @@ export class AuthService implements IAuthService {
 
       if (!user.isActive) {
         throw new CustomError('Account is deactivated', 401);
+      }
+
+      if (!user.isVerified) {
+        // Generate new OTP for unverified user trying to login
+        const otp = generateOTP();
+        const otpExpiration = generateOTPExpiration();
+
+        // Update user with new OTP
+        user.emailVerificationOTP = otp;
+        user.emailVerificationExpires = otpExpiration;
+        await user.save();
+
+        // Send verification email
+        try {
+          await emailService.sendEmail({
+            to: user.email,
+            subject: 'Verify Your KabaBeats Account',
+            html: emailService.generateOTPEmailHTML(otp, user.username, user.email),
+            text: emailService.generateOTPEmailText(otp, user.username, user.email),
+          });
+          logger.info(`Verification email sent to unverified user: ${user.email}`);
+        } catch (emailError) {
+          logger.error('Failed to send verification email to unverified user:', emailError);
+          // Don't fail the login process if email fails - user can still use resend
+        }
+
+        throw new CustomError('Email not verified. Please check your email for verification code.', 401);
       }
 
       // Compare password
@@ -549,8 +598,107 @@ export class AuthService implements IAuthService {
     }
   }
 
+  async verifyEmailOTP(email: string, otp: string): Promise<AuthResponse> {
+    try {
+      const user = await User.findOne({ email }).select('+emailVerificationOTP +emailVerificationExpires');
+      
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      if (user.isVerified) {
+        throw new CustomError('Email already verified', 400);
+      }
+
+      if (!user.emailVerificationOTP || !user.emailVerificationExpires) {
+        throw new CustomError('No verification code found. Please request a new one.', 400);
+      }
+
+      if (isOTPExpired(user.emailVerificationExpires)) {
+        throw new CustomError('Verification code has expired. Please request a new one.', 400);
+      }
+
+      if (user.emailVerificationOTP !== otp) {
+        throw new CustomError('Invalid verification code', 400);
+      }
+
+      // Verify the user
+      user.isVerified = true;
+      user.emailVerificationOTP = undefined as any;
+      user.emailVerificationExpires = undefined as any;
+      await user.save();
+
+      // Generate tokens
+      const accessToken = generateToken({
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      });
+
+      const refreshToken = generateRefreshToken({
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      });
+
+      // Add refresh token to user
+      await user.addRefreshToken(refreshToken);
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      logger.info(`Email verified for user: ${user.email}`);
+
+      return {
+        user: this.sanitizeUser(user),
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      logger.error('Email verification error:', error);
+      throw error;
+    }
+  }
+
+  async resendVerificationOTP(email: string): Promise<void> {
+    try {
+      const user = await User.findOne({ email });
+      
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      if (user.isVerified) {
+        throw new CustomError('Email already verified', 400);
+      }
+
+      // Generate new OTP
+      const otp = generateOTP();
+      const otpExpiration = generateOTPExpiration();
+
+      // Update user with new OTP
+      user.emailVerificationOTP = otp;
+      user.emailVerificationExpires = otpExpiration;
+      await user.save();
+
+      // Send verification email
+      await emailService.sendEmail({
+        to: user.email,
+        subject: 'Verify Your KabaBeats Account',
+        html: emailService.generateOTPEmailHTML(otp, user.username, user.email),
+        text: emailService.generateOTPEmailText(otp, user.username, user.email),
+      });
+
+      logger.info(`Verification email resent to ${user.email}`);
+    } catch (error) {
+      logger.error('Resend verification OTP error:', error);
+      throw error;
+    }
+  }
+
   private sanitizeUser(user: IUser): Omit<IUser, 'password' | 'refreshTokens'> {
-    const { password, refreshTokens, ...sanitizedUser } = user.toObject();
+    const { password, refreshTokens, emailVerificationOTP, emailVerificationExpires, ...sanitizedUser } = user.toObject();
     return sanitizedUser;
   }
 }

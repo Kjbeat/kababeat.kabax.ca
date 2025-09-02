@@ -101,7 +101,7 @@ export function SignupForm() {
     
     try {
       console.log('SignupForm: Submitting signup with country:', detectedCountry);
-      await signup(
+      const result = await signup(
         formData.email, 
         formData.password, 
         formData.username, 
@@ -109,11 +109,20 @@ export function SignupForm() {
         undefined, // lastName
         detectedCountry
       );
-      toast({
-        title: t('auth.accountCreatedSuccessfully'),
-        description: t('auth.welcomeToKababeats'),
-      });
-      navigate("/explore");
+      
+      if (result.needsVerification) {
+        toast({
+          title: t('auth.accountCreatedSuccessfully'),
+          description: t('auth.checkEmailForVerification'),
+        });
+        navigate("/verify-email");
+      } else {
+        toast({
+          title: t('auth.accountCreatedSuccessfully'),
+          description: t('auth.welcomeToKababeats'),
+        });
+        navigate("/explore");
+      }
     } catch (err) {
       setError(t('auth.failedToCreateAccount'));
     }
@@ -128,6 +137,7 @@ export function SignupForm() {
       const username = generateUsername('google_user'); // Will be updated with actual email from Google
       console.log('SignupForm: Google signup with country:', detectedCountry);
       await signupWithGoogle(username, detectedCountry);
+      // Google OAuth will handle verification through the callback
       toast({
         title: t('auth.accountCreatedSuccessfully'),
         description: t('auth.welcomeToKababeats'),
@@ -170,20 +180,11 @@ export function SignupForm() {
         <Card className="border shadow-sm">
                       <CardHeader>
               <CardTitle>{t('auth.createYourAccount')}</CardTitle>
-              {/* <CardDescription>{t('auth.useGoogleOrEmail')}</CardDescription> */}
             </CardHeader>
             
             <CardContent>
               <div className="space-y-4">
-                {/* Location Detection Status */}
-                {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {isDetectingLocation ? (
-                    <span>{t('auth.detectingLocation')}</span>
-                  ) : (
-                    <span>{t('auth.detectedLocation')}: {detectedCountry}</span>
-                  )}
-                </div> */}
+  
 
               {error && (
                 <Alert className="border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive">

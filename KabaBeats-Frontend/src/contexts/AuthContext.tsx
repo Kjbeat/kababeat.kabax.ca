@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(errorData.error?.message || errorData.message || 'Login failed');
       }
 
       const data = await response.json();
@@ -129,6 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       } = {
         mode: currentTheme as 'light' | 'dark' | 'system',
+        customTheme: {
+          primary: '#000000', // Default black primary from index.css
+          accent: '#262626',  // Default accent from index.css (0 0% 15%)
+          radius: 0.75,       // Default radius
+        },
       };
 
       if (customTheme) {
@@ -151,13 +156,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return '#000000'; // fallback
           };
 
+          // Override defaults with existing custom theme
           themePreferences.customTheme = {
-            primary: convertToHex(parsedCustomTheme['--primary'] || '#000000'),
-            accent: convertToHex(parsedCustomTheme['--accent'] || '#333333'),
-            radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || 0.75,
+            primary: convertToHex(parsedCustomTheme['--primary'] || themePreferences.customTheme!.primary),
+            accent: convertToHex(parsedCustomTheme['--accent'] || themePreferences.customTheme!.accent),
+            radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || themePreferences.customTheme!.radius,
           };
         } catch (error) {
           console.error('Error parsing custom theme:', error);
+          // Keep the default theme if parsing fails
         }
       }
 
@@ -189,13 +196,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       const { user: userData, accessToken, refreshToken: refreshTokenData } = data.data;
 
-      setUser(userData);
-      setAccessToken(accessToken);
-      setRefreshToken(refreshTokenData);
+      // Store user data temporarily for OTP verification
+      // Don't set as authenticated until email is verified
+      localStorage.setItem('pending-verification-email', email);
+      localStorage.setItem('pending-verification-user', JSON.stringify(userData));
       
-      localStorage.setItem('kababeats-user', JSON.stringify(userData));
-      localStorage.setItem('kababeats-access-token', accessToken);
-      localStorage.setItem('kababeats-refresh-token', refreshTokenData);
+      // Return the email for OTP verification
+      return { email, needsVerification: true };
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -245,6 +252,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     } = {
       mode: currentTheme as 'light' | 'dark' | 'system',
+      customTheme: {
+        primary: '#000000', // Default black primary from index.css
+        accent: '#262626',  // Default accent from index.css (0 0% 15%)
+        radius: 0.75,       // Default radius
+      },
     };
 
     if (customTheme) {
@@ -267,10 +279,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return '#000000'; // fallback
         };
 
+        // Override defaults with existing custom theme
         themePreferences.customTheme = {
-          primary: convertToHex(parsedCustomTheme['--primary'] || '#000000'),
-          accent: convertToHex(parsedCustomTheme['--accent'] || '#333333'),
-          radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || 0.75,
+          primary: convertToHex(parsedCustomTheme['--primary'] || themePreferences.customTheme!.primary),
+          accent: convertToHex(parsedCustomTheme['--accent'] || themePreferences.customTheme!.accent),
+          radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || themePreferences.customTheme!.radius,
         };
       } catch (error) {
         console.error('Error parsing custom theme:', error);
@@ -415,6 +428,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const verifyEmailOTP = async (email: string, otp: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'OTP verification failed');
+      }
+
+      const data = await response.json();
+      const { user: userData, accessToken, refreshToken: refreshTokenData } = data.data;
+
+      setUser(userData);
+      setAccessToken(accessToken);
+      setRefreshToken(refreshTokenData);
+      
+      localStorage.setItem('kababeats-user', JSON.stringify(userData));
+      localStorage.setItem('kababeats-access-token', accessToken);
+      localStorage.setItem('kababeats-refresh-token', refreshTokenData);
+      
+      // Clear pending verification data
+      localStorage.removeItem('pending-verification-email');
+      localStorage.removeItem('pending-verification-user');
+      
+      // Load user's theme preferences
+      if (userData.themePreferences) {
+        loadUserThemePreferences(userData.themePreferences);
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendVerificationOTP = async (email: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to resend verification code');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -430,6 +506,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken,
       updateThemePreferences,
       getThemePreferences,
+      verifyEmailOTP,
+      resendVerificationOTP,
     }}>
       {children}
     </AuthContext.Provider>

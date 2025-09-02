@@ -21,6 +21,9 @@ export interface IUser extends BaseDocument {
   isActive: boolean;
   lastLogin?: Date;
   refreshTokens: string[];
+  // Email verification fields
+  emailVerificationOTP?: string;
+  emailVerificationExpires?: Date;
   // OAuth fields
   googleId?: string;
   facebookId?: string;

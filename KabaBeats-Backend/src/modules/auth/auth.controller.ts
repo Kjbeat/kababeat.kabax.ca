@@ -372,4 +372,45 @@ export class AuthController implements IAuthController {
       next(error);
     }
   };
+
+  verifyEmailOTP = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, otp } = req.body;
+
+      if (!email || !otp) {
+        throw new CustomError('Email and OTP are required', 400);
+      }
+
+      const result = await this.authService.verifyEmailOTP(email, otp);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: result,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  resendVerificationOTP = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        throw new CustomError('Email is required', 400);
+      }
+
+      await this.authService.resendVerificationOTP(email);
+      
+      const response: ApiResponse = {
+        success: true,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

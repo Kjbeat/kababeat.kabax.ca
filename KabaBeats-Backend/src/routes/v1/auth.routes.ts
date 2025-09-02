@@ -93,6 +93,15 @@ const themePreferencesSchema = Joi.object({
   }).required(),
 });
 
+const verifyOTPSchema = Joi.object({
+  email: commonSchemas.email,
+  otp: Joi.string().length(7).pattern(/^[0-9]{7}$/).required(),
+});
+
+const resendOTPSchema = Joi.object({
+  email: commonSchemas.email,
+});
+
 // Public routes
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
@@ -103,6 +112,8 @@ router.post('/forgot-password', validate(forgotPasswordSchema), authController.f
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 router.post('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);
 router.post('/resend-verification', validate(resendVerificationSchema), authController.resendVerificationEmail);
+router.post('/verify-otp', validate(verifyOTPSchema), authController.verifyEmailOTP);
+router.post('/resend-otp', validate(resendOTPSchema), authController.resendVerificationOTP);
 
 // Protected routes
 router.use(authenticate); // All routes below require authentication

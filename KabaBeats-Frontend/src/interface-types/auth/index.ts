@@ -28,7 +28,7 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, username: string, firstName?: string, lastName?: string, country?: string) => Promise<void>;
+  signup: (email: string, password: string, username: string, firstName?: string, lastName?: string, country?: string) => Promise<{ email: string; needsVerification: boolean }>;
   loginWithGoogle: () => Promise<void>;
   signupWithGoogle: (username: string, country?: string) => Promise<void>;
   handleOAuthCallback: (token: string, refreshToken: string) => Promise<void>;
@@ -52,4 +52,6 @@ export interface AuthContextType {
       radius: number;
     };
   } | null>;
+  verifyEmailOTP: (email: string, otp: string) => Promise<void>;
+  resendVerificationOTP: (email: string) => Promise<void>;
 }

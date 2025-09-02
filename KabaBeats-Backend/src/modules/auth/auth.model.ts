@@ -80,6 +80,15 @@ const userSchema = new Schema<IUserDocument>({
     type: String,
     select: false,
   }],
+  // Email verification fields
+  emailVerificationOTP: {
+    type: String,
+    select: false,
+  },
+  emailVerificationExpires: {
+    type: Date,
+    select: false,
+  },
   // OAuth fields
   googleId: {
     type: String,
