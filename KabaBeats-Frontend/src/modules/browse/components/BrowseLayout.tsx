@@ -7,6 +7,7 @@ import { BrowseFilters } from "./BrowseFilters";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { getArtworkUrl } from "@/utils/artwork";
 
 // Beat interface matching backend
 interface Beat {
@@ -33,11 +34,14 @@ interface Beat {
   status: 'draft' | 'published' | 'scheduled' | 'archived';
   owner: {
     _id: string;
+    id: string;
     username: string;
     avatar?: string;
   };
   hlsUrl?: string;
   hlsProcessed: boolean;
+  storageKey?: string;
+  stemsStorageKey?: string;
 }
 
 // API base URL
@@ -142,7 +146,7 @@ export function BrowseLayout() {
     if (!isLoading) {
       fetchBeats(1, true);
     }
-  }, [searchQuery, selectedGenre, selectedMood, selectedKey, bpmRange, priceRange, sortBy]);
+  }, [searchQuery, selectedGenre, selectedMood, selectedKey, bpmRange, priceRange, sortBy, fetchBeats, isLoading]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -166,18 +170,25 @@ export function BrowseLayout() {
   const { playBeat } = useMediaPlayer();
 
   const handlePlay = (beat: Beat) => {
+    const audioUrl = beat.storageKey ? `https://pub-6f3847c4d3f4471284d44c6913bcf6f0.r2.dev/${beat.storageKey}` : undefined;
+    
     playBeat({
       id: beat._id || beat.id,
       title: beat.title,
       producer: beat.producer,
-      artwork: beat.artwork,
+      artwork: getArtworkUrl(beat.artwork),
       bpm: beat.bpm,
       key: beat.key,
       genre: beat.genre,
       price: beat.salePrice || beat.basePrice,
+      audioUrl: audioUrl,
       isLiked: false, // TODO: Implement like functionality
-      hlsUrl: beat.hlsUrl,
     });
+  };
+
+  // Get the default MP3 price for display (this should be the base price)
+  const getDisplayPrice = (beat: Beat) => {
+    return beat.salePrice || beat.basePrice || 0;
   };
 
   return (
@@ -257,13 +268,15 @@ export function BrowseLayout() {
                     <BeatCard
                       id={beat._id || beat.id}
                       title={beat.title}
-                      producer={beat.producer}
-                      artwork={beat.artwork}
+                      producer={beat.owner.username}
+                      artwork={getArtworkUrl(beat.artwork)}
                       bpm={beat.bpm}
                       musicalKey={beat.key}
                       genre={beat.genre}
-                      price={beat.salePrice || beat.basePrice}
+                      price={getDisplayPrice(beat)}
                       exclusive={beat.isExclusive}
+                      allowFreeDownload={beat.allowFreeDownload}
+                      ownerId={beat.owner._id}
                       onPlay={() => handlePlay(beat)}
                     />
                   </div>
@@ -280,13 +293,15 @@ export function BrowseLayout() {
                     <BeatListItem
                       id={beat._id || beat.id}
                       title={beat.title}
-                      producer={beat.producer}
-                      artwork={beat.artwork}
+                      producer={beat.owner.username}
+                      artwork={getArtworkUrl(beat.artwork)}
                       bpm={beat.bpm}
                       musicalKey={beat.key}
                       genre={beat.genre}
-                      price={beat.salePrice || beat.basePrice}
+                      price={getDisplayPrice(beat)}
                       exclusive={beat.isExclusive}
+                      allowFreeDownload={beat.allowFreeDownload}
+                      ownerId={beat.owner._id}
                       onPlay={() => handlePlay(beat)}
                     />
                   </div>

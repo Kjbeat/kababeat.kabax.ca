@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,13 @@ interface License {
   sortOrder: number;
 }
 
+interface LicenseOption {
+  value: string;
+  label: string;
+  price: number;
+  description: string;
+}
+
 interface LicenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +35,8 @@ interface LicenseDialogProps {
   beatPrice: number;
   onDownload: (licenseType: string) => void;
   onAddToCart: (licenseType: string) => void;
+  licenseOptions?: LicenseOption[];
+  getLicenseDetails?: (licenseType: string) => string[];
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
@@ -38,7 +48,9 @@ export function LicenseDialog({
   beatTitle, 
   beatPrice, 
   onDownload, 
-  onAddToCart 
+  onAddToCart,
+  licenseOptions = [],
+  getLicenseDetails
 }: LicenseDialogProps) {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
@@ -48,9 +60,20 @@ export function LicenseDialog({
 
   useEffect(() => {
     if (isOpen) {
-      fetchLicenses();
+      if (licenseOptions.length > 0) {
+        // Use passed license options
+        setLoading(false);
+        const prices: Record<string, number> = {};
+        licenseOptions.forEach(option => {
+          prices[option.value] = option.price;
+        });
+        setCalculatedPrices(prices);
+      } else {
+        // Fallback to fetching from API
+        fetchLicenses();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, licenseOptions]);
 
   const fetchLicenses = async () => {
     try {
@@ -95,13 +118,13 @@ export function LicenseDialog({
 
   const handleDownload = () => {
     if (!selectedLicense) return;
-    onDownload(selectedLicense.type);
+    onDownload((selectedLicense as any).type || (selectedLicense as any).value);
     onClose();
   };
 
   const handleAddToCart = () => {
     if (!selectedLicense) return;
-    onAddToCart(selectedLicense.type);
+    onAddToCart((selectedLicense as any).type || (selectedLicense as any).value);
     onClose();
   };
 
@@ -146,13 +169,13 @@ export function LicenseDialog({
           </div>
         ) : (
           <div className="space-y-4">
-            {licenses.map((license) => {
-              const price = calculatedPrices[license.type] || license.price;
-              const isSelected = selectedLicense?._id === license._id;
+            {(licenseOptions.length > 0 ? licenseOptions : licenses).map((license) => {
+              const price = calculatedPrices[license.value || license.type] || license.price;
+              const isSelected = selectedLicense?._id === license._id || selectedLicense?.type === license.value;
               
               return (
                 <div
-                  key={license._id}
+                  key={license._id || license.value}
                   className={`border rounded-lg p-4 cursor-pointer transition-all ${
                     isSelected 
                       ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
@@ -163,11 +186,11 @@ export function LicenseDialog({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{getLicenseIcon(license.type)}</span>
+                        <span className="text-2xl">{getLicenseIcon(license.type || license.value)}</span>
                         <div>
-                          <h3 className="font-semibold text-lg">{license.name}</h3>
-                          <Badge className={getLicenseColor(license.type)}>
-                            {license.type}
+                          <h3 className="font-semibold text-lg">{license.name || license.label}</h3>
+                          <Badge className={getLicenseColor(license.type || license.value)}>
+                            {license.type || license.value}
                           </Badge>
                         </div>
                       </div>
@@ -177,7 +200,7 @@ export function LicenseDialog({
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">Features:</h4>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm">
-                          {license.features.map((feature, index) => (
+                          {(getLicenseDetails ? getLicenseDetails(license.type || license.value) : license.features || []).map((feature, index) => (
                             <li key={index} className="flex items-center gap-2">
                               <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
                               {feature}
@@ -186,7 +209,7 @@ export function LicenseDialog({
                         </ul>
                       </div>
                       
-                      {license.restrictions.length > 0 && (
+                      {license.restrictions && license.restrictions.length > 0 && (
                         <div className="mt-3">
                           <h4 className="font-medium text-sm text-muted-foreground">Restrictions:</h4>
                           <ul className="text-sm text-muted-foreground">
@@ -214,7 +237,7 @@ export function LicenseDialog({
                     <div className="mt-4 pt-4 border-t">
                       <div className="bg-muted/50 rounded-lg p-3">
                         <h4 className="font-medium text-sm mb-2">Usage Rights:</h4>
-                        <p className="text-sm text-muted-foreground">{license.usageRights}</p>
+                        <p className="text-sm text-muted-foreground">{license.usageRights || 'See features above for usage details.'}</p>
                       </div>
                     </div>
                   )}
@@ -230,9 +253,9 @@ export function LicenseDialog({
           <div className="text-sm text-muted-foreground">
             {selectedLicense ? (
               <>
-                Selected: <span className="font-medium">{selectedLicense.name}</span>
-                {calculatedPrices[selectedLicense.type] > 0 && (
-                  <span className="ml-2">- ${calculatedPrices[selectedLicense.type]}</span>
+                Selected: <span className="font-medium">{(selectedLicense as any).name || (selectedLicense as any).label}</span>
+                {calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value] > 0 && (
+                  <span className="ml-2">- ${calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value]}</span>
                 )}
               </>
             ) : (
@@ -259,7 +282,7 @@ export function LicenseDialog({
                   className="gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  {calculatedPrices[selectedLicense.type] === 0 ? 'Download Free' : 'Buy & Download'}
+                  {calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value] === 0 ? 'Download Free' : 'Buy & Download'}
                 </Button>
               </>
             )}

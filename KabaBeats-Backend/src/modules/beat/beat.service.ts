@@ -53,7 +53,9 @@ export class BeatService implements IBeatService {
         ...beatData,
         owner: userId,
         hlsProcessed: false, // Will be processed later
-        status: beatData.status || (beatData.scheduledDate ? 'scheduled' : 'draft')
+        status: beatData.status || (beatData.scheduledDate ? 'scheduled' : 'draft'),
+        basePrice: beatData.basePrice || 25, // Default MP3 price
+        isExclusive: beatData.isExclusive || false
       });
 
       await beat.save();

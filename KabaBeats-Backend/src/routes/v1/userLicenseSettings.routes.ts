@@ -39,4 +39,10 @@ router.post(
   userLicenseSettingsController.createDefaultUserLicenseSettings
 );
 
+// Public endpoint to get user license settings by user ID (for beat owners)
+router.get(
+  '/user/:userId',
+  userLicenseSettingsController.getUserLicenseSettingsByUserId
+);
+
 export default router;

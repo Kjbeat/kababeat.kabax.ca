@@ -316,16 +316,22 @@ export default function DashboardLicenses() {
     try {
       setIsLoading(true);
       
+      // Only update valid license types, exclude metadata fields
+      const validLicenseTypes = ['mp3', 'wav', 'trackout', 'unlimited', 'exclusive'];
+      
       // Update each license type individually to ensure proper validation
-      const updatePromises = Object.keys(licenseSettings).map(licenseType => {
-        return fetch(`${API_BASE_URL}/user-license-settings/${licenseType}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(licenseSettings[licenseType])
-        });
+      const updatePromises = validLicenseTypes.map(licenseType => {
+        if (licenseSettings[licenseType]) {
+          return fetch(`${API_BASE_URL}/user-license-settings/${licenseType}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(licenseSettings[licenseType])
+          });
+        }
+        return Promise.resolve(new Response(null, { status: 200 })); // Skip if no data
       });
 
       const responses = await Promise.all(updatePromises);

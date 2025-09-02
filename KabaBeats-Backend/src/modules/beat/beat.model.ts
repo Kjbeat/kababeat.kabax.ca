@@ -15,6 +15,9 @@ export interface IBeat extends Document {
   
   // Licensing
   allowFreeDownload: boolean;
+  basePrice: number;
+  salePrice?: number;
+  isExclusive: boolean;
   
   // Audio processing
   duration?: number;
@@ -136,6 +139,22 @@ const BeatSchema = new Schema<IBeat>({
   
   // Licensing
   allowFreeDownload: {
+    type: Boolean,
+    default: false
+  },
+  basePrice: {
+    type: Number,
+    required: true,
+    default: 25,
+    min: 0,
+    max: 10000
+  },
+  salePrice: {
+    type: Number,
+    min: 0,
+    max: 10000
+  },
+  isExclusive: {
     type: Boolean,
     default: false
   },

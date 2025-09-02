@@ -1,11 +1,12 @@
 import { Music, Heart, Check, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { LicenseDialog } from "./LicenseDialog";
+import { fetchUserLicenseSettings, convertToLicenseOptions, getLicenseDetails, type UserLicenseSettings } from "@/utils/licenseSettings";
 
 interface LicenseOption {
   value: string;
@@ -33,6 +34,7 @@ interface ArtworkProps {
   hlsUrl?: string;
   hlsProcessed?: boolean;
   onDownload?: (licenseType: string) => void;
+  ownerId?: string; // Add owner ID to fetch license settings
 }
 
 export function Artwork({ 
@@ -53,81 +55,58 @@ export function Artwork({
   allowFreeDownload,
   hlsUrl,
   hlsProcessed,
-  onDownload
+  onDownload,
+  ownerId
 }: ArtworkProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { state: playerState } = useMediaPlayer();
   const [open, setOpen] = useState(false);
+  const [ownerLicenseSettings, setOwnerLicenseSettings] = useState<UserLicenseSettings | null>(null);
+  const [licenseOptions, setLicenseOptions] = useState<LicenseOption[]>([]);
   
   // Use the prop value if provided explicitly, otherwise detect from player state
   const actuallyPlaying = isPlaying !== undefined ? isPlaying : (playerState.currentBeat?.id === id && playerState.isPlaying);
 
-  // Define license tiers; could be externalized later.
-  const base = price || 0;
-  const licenseOptions: LicenseOption[] = [
-    { value: "FREE", label: "Free Download", price: 0, description: "Tagged MP3 for preview / non‑profit use." },
-    { value: "MP3", label: "MP3", price: base, description: "Untagged MP3. 2.5k stream allowance." },
-    { value: "WAV", label: "WAV", price: base + 10, description: "Untagged WAV + MP3. 10k streams + monetized YouTube." },
-    { value: "STEMS", label: "Stems", price: base + 50, description: "Trackout stems + WAV + MP3. 100k streams & live shows." },
-    { value: "EXCLUSIVE", label: "Exclusive", price: base + 200, description: "Full rights transfer. Unlimited use." },
-  ];
+  // Fetch owner license settings when component mounts or ownerId changes
+  useEffect(() => {
+    const fetchLicenseSettings = async () => {
+      if (ownerId) {
+        const settings = await fetchUserLicenseSettings(ownerId);
+        setOwnerLicenseSettings(settings);
+        
+        // Convert to license options
+        const base = price || 0;
+        const options = convertToLicenseOptions(settings, base);
+        setLicenseOptions(options);
+      } else {
+        // Fallback to default options if no ownerId
+        const base = price || 0;
+        const defaultOptions: LicenseOption[] = [
+          { value: "FREE", label: "Free Download", price: 0, description: "Tagged MP3 for preview / non‑profit use." },
+          { value: "MP3", label: "MP3", price: base, description: "Untagged MP3. 2.5k stream allowance." },
+          { value: "WAV", label: "WAV", price: base + 10, description: "Untagged WAV + MP3. 10k streams + monetized YouTube." },
+          { value: "STEMS", label: "Stems", price: base + 50, description: "Trackout stems + WAV + MP3. 100k streams & live shows." },
+          { value: "EXCLUSIVE", label: "Exclusive", price: base + 200, description: "Full rights transfer. Unlimited use." },
+        ];
+        setLicenseOptions(defaultOptions);
+      }
+    };
 
-  const licenseDetails: Record<string, string[]> = {
-    FREE: [
-      "Tagged MP3 only",
-      "Personal listening / preview",
-      "No monetization",
-      "Credit required",
-    ],
-    MP3: [
-      "Untagged MP3",
-      "Up to 2,500 streams",
-      "Non-profit use (YouTube demonetized)",
-      "Credit required",
-    ],
-    WAV: [
-      "Untagged WAV + MP3",
-      "Up to 10,000 streams",
-      "Monetized YouTube allowed",
-      "Live performances (small venues)",
-    ],
-    STEMS: [
-      "Trackout stems + WAV + MP3",
-      "Up to 100,000 streams",
-      "Broadcast / shows",
-      "Mix & rearrange stems",
-    ],
-    EXCLUSIVE: [
-      "Unlimited streams & sales",
-      "Full commercial rights",
-      "No further licensing",
-      "Beat removed from store",
-    ],
+    fetchLicenseSettings();
+  }, [ownerId, price]);
+
+  // Get license details from owner settings
+  const getLicenseDetailsForType = (licenseType: string): string[] => {
+    return getLicenseDetails(ownerLicenseSettings, licenseType);
   };
 
   const handleAdd = () => {
     if (hidePrice) return;
     
-    if (exclusive) {
-      // For exclusive beats, show license options
-      setOpen(true);
-    } else {
-      // For non-exclusive beats, add directly to cart
-      addToCart({
-        id,
-        title,
-        producer,
-        artwork,
-        price: price || 0,
-        licenseType: 'MP3'
-      });
-      toast({
-        title: "Added to cart",
-        description: `${title} by ${producer} has been added to your cart.`,
-      });
-    }
+    // Always show license options for all beats (not just exclusive)
+    setOpen(true);
   };
 
   const handleConfirmLicense = (licenseType: string) => {
@@ -238,6 +217,8 @@ export function Artwork({
         beatPrice={price || 0}
         onDownload={handleDownload}
         onAddToCart={handleConfirmLicense}
+        licenseOptions={licenseOptions}
+        getLicenseDetails={getLicenseDetailsForType}
       />
     </div>
   );

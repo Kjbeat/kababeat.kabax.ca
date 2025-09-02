@@ -3,11 +3,12 @@ import { Play, Pause, ShoppingBag, Music, Heart, Check } from "lucide-react";
 import { Actions } from "./Actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
+import { fetchUserLicenseSettings, convertToLicenseOptions, getLicenseDetails, type UserLicenseSettings } from "@/utils/licenseSettings";
 
 import type { BeatCardProps } from "./types";
 
@@ -31,6 +32,7 @@ export function BeatListItem({
   salePrice,
   exclusive = false,
   inCart = false,
+  ownerId,
   onPlay,
   onLike,
   onAddToCart,
@@ -44,29 +46,47 @@ export function BeatListItem({
   const liked = isFavorited(id);
   const [licenseOpen, setLicenseOpen] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
+  const [ownerLicenseSettings, setOwnerLicenseSettings] = useState<UserLicenseSettings | null>(null);
+  const [licenseOptions, setLicenseOptions] = useState<any[]>([]);
   
   // Check if this beat is currently playing
   const isPlaying = playerState.currentBeat?.id === id && playerState.isPlaying;
 
-  const base = price || 0;
-  const licenseOptions = [
-    { value: "FREE", label: "Free Download", price: 0, description: "Tagged MP3 preview / non-profit." },
-    { value: "MP3", label: "MP3", price: base },
-    { value: "WAV", label: "WAV", price: base + 10 },
-    { value: "STEMS", label: "Stems", price: base + 50 },
-    { value: "EXCLUSIVE", label: "Exclusive", price: base + 200 },
-  ];
+  // Fetch owner license settings when component mounts or ownerId changes
+  useEffect(() => {
+    const fetchLicenseSettings = async () => {
+      if (ownerId) {
+        const settings = await fetchUserLicenseSettings(ownerId);
+        setOwnerLicenseSettings(settings);
+        
+        // Convert to license options
+        const base = price || 0;
+        const options = convertToLicenseOptions(settings, base);
+        setLicenseOptions(options);
+      } else {
+        // Fallback to default options if no ownerId
+        const base = price || 0;
+        const defaultOptions = [
+          { value: "FREE", label: "Free Download", price: 0, description: "Tagged MP3 preview / non-profit." },
+          { value: "MP3", label: "MP3", price: base },
+          { value: "WAV", label: "WAV", price: base + 10 },
+          { value: "STEMS", label: "Stems", price: base + 50 },
+          { value: "EXCLUSIVE", label: "Exclusive", price: base + 200 },
+        ];
+        setLicenseOptions(defaultOptions);
+      }
+    };
 
-  const licenseDetails: Record<string, string[]> = {
-    FREE: ["Tagged MP3", "Personal / preview", "No monetization"],
-    MP3: ["Untagged MP3", "2.5k streams", "Credit required"],
-    WAV: ["WAV + MP3", "10k streams", "Monetized YouTube"],
-    STEMS: ["Trackout stems", "100k streams", "Broadcast allowed"],
-    EXCLUSIVE: ["Unlimited", "Full rights", "Removed from store"],
+    fetchLicenseSettings();
+  }, [ownerId, price]);
+
+  // Get license details from owner settings
+  const getLicenseDetailsForType = (licenseType: string): string[] => {
+    return getLicenseDetails(ownerLicenseSettings, licenseType);
   };
 
   const handleAdd = () => {
-    // open license dialog instead of immediate add
+    // Always open license dialog for all beats
     setLicenseOpen(true);
   };
 
@@ -209,7 +229,7 @@ export function BeatListItem({
               <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2 sm:p-3">
                 <p className="text-[11px] sm:text-xs font-medium mb-1">What's included:</p>
                 <ul className="text-[9px] sm:text-[10px] leading-relaxed grid gap-1 list-disc pl-3 sm:pl-4">
-                  {licenseDetails[selectedLicense]?.map(line => (
+                  {getLicenseDetailsForType(selectedLicense)?.map(line => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>

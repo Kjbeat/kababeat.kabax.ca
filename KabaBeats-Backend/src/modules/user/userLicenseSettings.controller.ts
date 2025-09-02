@@ -109,6 +109,34 @@ export class UserLicenseSettingsController {
       } as ApiResponse<null>);
     }
   }
+
+  async getUserLicenseSettingsByUserId(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'User ID is required' }
+        } as ApiResponse<null>);
+        return;
+      }
+
+      const settings = await userLicenseSettingsService.getUserLicenseSettings(userId);
+      
+      res.status(200).json({
+        success: true,
+        data: settings
+      } as ApiResponse<typeof settings>);
+    } catch (error) {
+      logger.error('Get user license settings by user ID controller error:', error);
+      const statusCode = error instanceof CustomError ? error.statusCode : 500;
+      res.status(statusCode).json({
+        success: false,
+        error: { message: error instanceof Error ? error.message : 'Internal server error' }
+      } as ApiResponse<null>);
+    }
+  }
 }
 
 export const userLicenseSettingsController = new UserLicenseSettingsController();

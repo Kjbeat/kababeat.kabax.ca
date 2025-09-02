@@ -19,6 +19,9 @@ export interface CreateBeatRequest {
   mood?: string;
   tags?: string[];
   allowFreeDownload?: boolean;
+  basePrice?: number;
+  salePrice?: number;
+  isExclusive?: boolean;
   status?: 'draft' | 'published' | 'scheduled' | 'archived';
   collaborators?: {
     userId?: string;
@@ -40,6 +43,9 @@ export interface UpdateBeatRequest {
   mood?: string;
   tags?: string[];
   allowFreeDownload?: boolean;
+  basePrice?: number;
+  salePrice?: number;
+  isExclusive?: boolean;
   collaborators?: {
     userId?: string;
     name: string;

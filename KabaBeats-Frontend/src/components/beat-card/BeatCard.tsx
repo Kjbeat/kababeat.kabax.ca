@@ -22,6 +22,7 @@ export function BeatCard({
   hidePrice,
   exclusive = false,
   inCart = false,
+  ownerId,
   onPlay,
   onLike,
   onAddToCart,
@@ -90,6 +91,7 @@ export function BeatCard({
             inCart={!hidePrice && inCart}
             onAddToCart={hidePrice ? undefined : onAddToCart}
             hidePrice={hidePrice}
+            ownerId={ownerId}
           />
         </div>
         <div className="beat-card-body mt-auto">

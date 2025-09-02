@@ -21,6 +21,8 @@ export interface BeatCardProps {
   hlsUrl?: string;
   /** Whether HLS is processed and available */
   hlsProcessed?: boolean;
+  /** Beat owner ID for fetching license settings */
+  ownerId?: string;
   onPlay?: () => void;
   onLike?: () => void;
   onAddToCart?: () => void;
