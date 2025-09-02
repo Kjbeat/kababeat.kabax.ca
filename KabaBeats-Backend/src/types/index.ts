@@ -30,6 +30,15 @@ export interface IUser extends BaseDocument {
     twitter?: string;
     youtube?: string;
   };
+  // Theme preferences
+  themePreferences?: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  };
 }
 
 // Beat related types

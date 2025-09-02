@@ -8,6 +8,13 @@ import { IUser } from '@/types';
 export class AuthService implements IAuthService {
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Received registration data:', {
+        email: data.email,
+        username: data.username,
+        country: data.country,
+        themePreferences: data.themePreferences
+      });
+
       // Check if user already exists
       const existingUser = await User.findOne({
         $or: [{ email: data.email }, { username: data.username }]
@@ -31,7 +38,16 @@ export class AuthService implements IAuthService {
         refreshTokens: [],
       });
 
+      console.log('AuthService: Creating user with data:', {
+        email: user.email,
+        username: user.username,
+        country: user.country,
+        themePreferences: user.themePreferences
+      });
+
       await user.save();
+      
+      console.log('AuthService: User created successfully with ID:', user._id);
 
       // Generate tokens
       const accessToken = generateToken({
@@ -483,6 +499,52 @@ export class AuthService implements IAuthService {
       logger.info(`Account deletion requested for user: ${user.email}`);
     } catch (error) {
       logger.error('Delete account error:', error);
+      throw error;
+    }
+  }
+
+  async updateThemePreferences(userId: string, themePreferences: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  }): Promise<Omit<IUser, 'password' | 'refreshTokens'>> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      user.themePreferences = themePreferences;
+      await user.save();
+
+      logger.info(`Theme preferences updated for user: ${user.email}`);
+      return this.sanitizeUser(user);
+    } catch (error) {
+      logger.error('Update theme preferences error:', error);
+      throw error;
+    }
+  }
+
+  async getThemePreferences(userId: string): Promise<{
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  } | null> {
+    try {
+      const user = await User.findById(userId).select('themePreferences');
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      return user.themePreferences || null;
+    } catch (error) {
+      logger.error('Get theme preferences error:', error);
       throw error;
     }
   }

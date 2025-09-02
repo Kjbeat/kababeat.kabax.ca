@@ -1,24 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-
-export interface CartItem {
-  id: string;
-  title: string;
-  producer: string;
-  artwork?: string;
-  price: number;
-  licenseType: string; // MP3, WAV, Exclusive, etc.
-  quantity: number;
-}
-
-interface CartContextType {
-  items: CartItem[];
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
-  removeFromCart: (id: string, licenseType: string) => void;
-  updateQuantity: (id: string, licenseType: string, quantity: number) => void;
-  clearCart: () => void;
-  getTotalPrice: () => number;
-  getItemCount: () => number;
-}
+import { CartItem, CartContextType } from '../interface-types/cart';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 

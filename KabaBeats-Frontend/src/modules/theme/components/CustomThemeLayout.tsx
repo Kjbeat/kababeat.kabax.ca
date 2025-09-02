@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Sun, Moon, Monitor, Copy, RefreshCcw } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -111,6 +113,8 @@ function loadPersistedVars(): Record<string, string> {
 export function CustomThemeLayout() {
   const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
+  const { updateThemePreferences, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const [primaryHex, setPrimaryHex] = useState<string>("#000000");
   const [accentHex, setAccentHex] = useState<string>("#333333");
@@ -210,17 +214,48 @@ export function CustomThemeLayout() {
 
   // Save settings handler
   const [saveMsg, setSaveMsg] = useState<string>("");
-  const saveSettings = () => {
-    const currentVars = {
-      "--primary": getVar("--primary") ?? "",
-      "--primary-foreground": getVar("--primary-foreground") ?? "",
-      "--accent": getVar("--accent") ?? "",
-      "--accent-foreground": getVar("--accent-foreground") ?? "",
-      "--radius": getVar("--radius") ?? "",
-    };
-    persistVars(currentVars);
-    setSaveMsg(t('theme.settingsSaved'));
-    setTimeout(() => setSaveMsg(""), 2000);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const saveSettings = async () => {
+    try {
+      setIsSaving(true);
+      const currentVars = {
+        "--primary": getVar("--primary") ?? "",
+        "--primary-foreground": getVar("--primary-foreground") ?? "",
+        "--accent": getVar("--accent") ?? "",
+        "--accent-foreground": getVar("--accent-foreground") ?? "",
+        "--radius": getVar("--radius") ?? "",
+      };
+      
+      // Save to localStorage
+      persistVars(currentVars);
+      
+      // Save to backend if authenticated
+      if (isAuthenticated) {
+        const themePreferences = {
+          mode: theme as 'light' | 'dark' | 'system',
+          customTheme: {
+            primary: hslVarToHex(currentVars["--primary"]),
+            accent: hslVarToHex(currentVars["--accent"]),
+            radius: parseFloat(currentVars["--radius"]?.replace('rem', '') || '0.75'),
+          },
+        };
+        
+        await updateThemePreferences(themePreferences);
+      }
+      
+      setSaveMsg(t('theme.settingsSaved'));
+      setTimeout(() => setSaveMsg(""), 2000);
+    } catch (error) {
+      console.error('Failed to save theme preferences:', error);
+      toast({
+        title: t('theme.saveError'),
+        description: t('theme.saveErrorDescription'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -231,8 +266,8 @@ export function CustomThemeLayout() {
         <Button variant="outline" size="sm" onClick={resetAll}>
           <RefreshCcw className="h-4 w-4 mr-2" /> {t('theme.resetToDefaults')}
         </Button>
-        <Button variant="default" size="sm" onClick={saveSettings}>
-          {t('theme.saveSettings')}
+        <Button variant="default" size="sm" onClick={saveSettings} disabled={isSaving}>
+          {isSaving ? t('theme.saving') : t('theme.saveSettings')}
         </Button>
         {saveMsg && <span className="ml-2 text-green-600 text-sm">{saveMsg}</span>}
       </div>

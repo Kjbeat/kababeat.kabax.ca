@@ -15,6 +15,14 @@ const registerSchema = Joi.object({
   firstName: Joi.string().max(50).optional(),
   lastName: Joi.string().max(50).optional(),
   country: Joi.string().max(50).optional(),
+  themePreferences: Joi.object({
+    mode: Joi.string().valid('light', 'dark', 'system').optional(),
+    customTheme: Joi.object({
+      primary: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+      accent: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+      radius: Joi.number().min(0.125).max(2).optional(),
+    }).optional(),
+  }).optional(),
 });
 
 const loginSchema = Joi.object({
@@ -74,6 +82,17 @@ const deleteAccountSchema = Joi.object({
   password: Joi.string().required(),
 });
 
+const themePreferencesSchema = Joi.object({
+  themePreferences: Joi.object({
+    mode: Joi.string().valid('light', 'dark', 'system').required(),
+    customTheme: Joi.object({
+      primary: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+      accent: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+      radius: Joi.number().min(0.125).max(2).optional(),
+    }).optional(),
+  }).required(),
+});
+
 // Public routes
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
@@ -94,5 +113,7 @@ router.post('/change-password', validate(changePasswordSchema), authController.c
 router.get('/profile', authController.getProfile);
 router.put('/profile', validate(updateProfileSchema), authController.updateProfile);
 router.delete('/account', validate(deleteAccountSchema), authController.deleteAccount);
+router.put('/theme-preferences', validate(themePreferencesSchema), authController.updateThemePreferences);
+router.get('/theme-preferences', authController.getThemePreferences);
 
 export default router;

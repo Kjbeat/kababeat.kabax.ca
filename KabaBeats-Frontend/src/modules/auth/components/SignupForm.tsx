@@ -1,25 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Music, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Music, Eye, EyeOff, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { getUserCountry } from "@/utils/geolocation";
 import bgVideo from "@/assets/SignUpVideo.webm";
-
-const africanCountries = [
-  "Nigeria", "Ghana", "Kenya", "South Africa", "Senegal", "Morocco", "Egypt", 
-  "Ethiopia", "Uganda", "Tanzania", "Cameroon", "Ivory Coast", "Zimbabwe", 
-  "Mali", "Burkina Faso", "Other"
-];
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -48,15 +42,11 @@ export function SignupForm() {
     email: "",
     password: "",
     confirmPassword: "",
-    username: "",
-    country: ""
+    username: ""
   });
   const [error, setError] = useState("");
-  const [showGoogleUserDetails, setShowGoogleUserDetails] = useState(false);
-  const [googleFormData, setGoogleFormData] = useState({
-    username: "",
-    country: ""
-  });
+  const [detectedCountry, setDetectedCountry] = useState<string>("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(true);
   const { signup, signupWithGoogle, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,6 +54,41 @@ export function SignupForm() {
 
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Detect user's country on component mount
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        setIsDetectingLocation(true);
+        console.log('SignupForm: Starting country detection...');
+        const country = await getUserCountry();
+        console.log('SignupForm: Detected country:', country);
+        setDetectedCountry(country);
+      } catch (error) {
+        console.error('SignupForm: Failed to detect country:', error);
+        setDetectedCountry('Nigeria'); // Fallback
+      } finally {
+        setIsDetectingLocation(false);
+      }
+    };
+
+    detectCountry();
+  }, []);
+
+  const generateUsername = (email: string): string => {
+    // Extract the part before @ from email and add random numbers
+    const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    return `${baseUsername}${randomSuffix}`;
+  };
+
+  // Auto-generate username when email changes
+  useEffect(() => {
+    if (formData.email && !formData.username) {
+      const generatedUsername = generateUsername(formData.email);
+      setFormData(prev => ({ ...prev, username: generatedUsername }));
+    }
+  }, [formData.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,11 +100,14 @@ export function SignupForm() {
     }
     
     try {
+      console.log('SignupForm: Submitting signup with country:', detectedCountry);
       await signup(
         formData.email, 
         formData.password, 
         formData.username, 
-        formData.country
+        undefined, // firstName
+        undefined, // lastName
+        detectedCountry
       );
       toast({
         title: t('auth.accountCreatedSuccessfully'),
@@ -95,18 +123,11 @@ export function SignupForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGoogleSignup = () => {
-    setShowGoogleUserDetails(true);
-  };
-
-  const handleGoogleFormSubmit = async () => {
-    if (!googleFormData.username.trim()) {
-      setError(t('auth.pleaseEnterUsername'));
-      return;
-    }
-    
+  const handleGoogleSignup = async () => {
     try {
-      await signupWithGoogle(googleFormData.username, googleFormData.country || "Nigeria");
+      const username = generateUsername('google_user'); // Will be updated with actual email from Google
+      console.log('SignupForm: Google signup with country:', detectedCountry);
+      await signupWithGoogle(username, detectedCountry);
       toast({
         title: t('auth.accountCreatedSuccessfully'),
         description: t('auth.welcomeToKababeats'),
@@ -115,10 +136,6 @@ export function SignupForm() {
     } catch (err) {
       setError(t('auth.failedToCreateAccountWithGoogle'));
     }
-  };
-
-  const handleGoogleInputChange = (field: string, value: string) => {
-    setGoogleFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -145,154 +162,85 @@ export function SignupForm() {
             <h1 className="text-2xl font-bold">KABABEATS</h1>
             <Badge variant="secondary" className="ml-1">v2</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{t('auth.createAccountToJoin')}</p>
+          <p className="text-sm text-muted-foreground"> 
+              {t('auth.createAccountToJoin')}
+          </p>
         </div>
 
         <Card className="border shadow-sm">
-          <CardHeader>
-            <CardTitle>{t('auth.createYourAccount')}</CardTitle>
-            <CardDescription>{t('auth.useGoogleOrEmail')}</CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            {showGoogleUserDetails ? (
+                      <CardHeader>
+              <CardTitle>{t('auth.createYourAccount')}</CardTitle>
+              {/* <CardDescription>{t('auth.useGoogleOrEmail')}</CardDescription> */}
+            </CardHeader>
+            
+            <CardContent>
               <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold">{t('auth.completeGoogleSignup')}</h3>
-                  <p className="text-sm text-muted-foreground">{t('auth.enterDetailsToContinue')}</p>
-                </div>
-                
-                {error && (
-                  <Alert className="border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="google-username">{t('auth.username')}</Label>
-                  <Input
-                    id="google-username"
-                    type="text"
-                    placeholder={t('auth.enterYourUsername')}
-                    value={googleFormData.username}
-                    onChange={(e) => handleGoogleInputChange("username", e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="google-country">{t('auth.country')}</Label>
-                  <Select value={googleFormData.country} onValueChange={(value) => handleGoogleInputChange("country", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('auth.selectYourCountry')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {africanCountries.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setShowGoogleUserDetails(false)}
-                  >
-                    {t('auth.back')}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    className="flex-1" 
-                    onClick={handleGoogleFormSubmit}
-                    disabled={loading}
-                  >
-                    {loading ? t('auth.creatingAccount') : t('auth.completeSignup')}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {error && (
-                  <Alert className="border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                {/* Google Sign Up Button */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full border"
-                  onClick={handleGoogleSignup}
-                  disabled={loading}
-                >
-                  <GoogleIcon />
-                  {t('auth.continueWithGoogle')}
-                </Button>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                      {t('auth.orCreateAccountWithEmail')}
-                    </span>
-                  </div>
-                </div>
+                {/* Location Detection Status */}
+                {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {isDetectingLocation ? (
+                    <span>{t('auth.detectingLocation')}</span>
+                  ) : (
+                    <span>{t('auth.detectedLocation')}: {detectedCountry}</span>
+                  )}
+                </div> */}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert className="border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="username">{t('auth.username')}</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder={t('auth.enterYourUsername')}
-                  value={formData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
-                  required
-                />
-              </div>
+              {/* Google Sign Up Button */}
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full border"
+                onClick={handleGoogleSignup}
+                disabled={loading || isDetectingLocation}
+              >
+                <GoogleIcon />
+                {t('auth.continueWithGoogle')}
+              </Button>
               
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('auth.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('auth.enterYourEmail')}
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  required
-                />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    {t('auth.orCreateAccountWithEmail')}
+                  </span>
+                </div>
               </div>
-              
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                
+
+                <div className="space-y-2">
+                  <Label htmlFor="username">{t('auth.username')}</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder={t('auth.enterYourUsername')}
+                    value={formData.username}
+                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    required
+                  />
+                </div>
+
               <div className="space-y-2">
-                <Label htmlFor="country">{t('auth.country')}</Label>
-                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('auth.selectYourCountry')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {africanCountries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
+                  <Label htmlFor="email">{t('auth.email')}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('auth.enterYourEmail')}
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    required
+                  />
+                </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
@@ -341,12 +289,11 @@ export function SignupForm() {
                 </div>
               </div>
               
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('auth.creatingAccount') : t('auth.createFreeAccount')}
-              </Button>
-            </form>
+                <Button type="submit" className="w-full" disabled={loading || isDetectingLocation}>
+                  {loading ? t('auth.creatingAccount') : t('auth.createFreeAccount')}
+                </Button>
+              </form>
             </div>
-            )}
             
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">

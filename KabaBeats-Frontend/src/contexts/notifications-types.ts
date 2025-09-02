@@ -1,25 +1,7 @@
 import { createContext } from 'react';
 
-export type NotificationType = 'sale' | 'follower' | 'comment' | 'like';
+// This file is deprecated. Use '../interface-types/notifications' instead.
+export type { NotificationType, NotificationItem, NotificationsContextType } from '../interface-types/notifications';
 
-export interface NotificationItem {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  createdAt: Date;
-  read: boolean;
-  meta?: Record<string, unknown>;
-}
-
-export interface NotificationsContextType {
-  notifications: NotificationItem[];
-  unreadCount: number;
-  addNotification: (n: Omit<NotificationItem, 'id' | 'createdAt' | 'read'>) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  clearNotifications: () => void;
-  latest: NotificationItem[];
-}
-
+import type { NotificationsContextType } from '../interface-types/notifications';
 export const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);

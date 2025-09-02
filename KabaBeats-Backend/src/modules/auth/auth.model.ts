@@ -109,6 +109,30 @@ const userSchema = new Schema<IUserDocument>({
       match: [/^@?[a-zA-Z0-9_.-]+$/, 'Please enter a valid YouTube channel'],
     },
   },
+  // Theme preferences
+  themePreferences: {
+    mode: {
+      type: String,
+      enum: ['light', 'dark', 'system'],
+      default: 'system',
+    },
+    customTheme: {
+      primary: {
+        type: String,
+        default: '#000000',
+      },
+      accent: {
+        type: String,
+        default: '#333333',
+      },
+      radius: {
+        type: Number,
+        default: 0.75,
+        min: 0.125,
+        max: 2,
+      },
+    },
+  },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

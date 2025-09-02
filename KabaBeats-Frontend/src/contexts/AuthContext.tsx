@@ -1,40 +1,52 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
-  role: string;
-  isVerified: boolean;
-  country: string;
-  socialLinks?: {
-    website?: string;
-    instagram?: string;
-    twitter?: string;
-    youtube?: string;
-  };
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, username: string, firstName?: string, lastName?: string, country?: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  signupWithGoogle: (username: string, country?: string) => Promise<void>;
-  handleOAuthCallback: (token: string, refreshToken: string) => Promise<void>;
-  logout: () => void;
-  loading: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-}
+import { hslToHex, hexToHslVar } from '../utils/hslToHex';
+import { User, AuthContextType } from '../interface-types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+
+// Helper function to convert HSL to hex
+
+
+// Helper function to convert hex to HSL for CSS variables
+
+
+// Helper function to load user's theme preferences
+const loadUserThemePreferences = (themePreferences: {
+  mode: 'light' | 'dark' | 'system';
+  customTheme?: {
+    primary: string;
+    accent: string;
+    radius: number;
+  };
+}) => {
+  // Set theme mode
+  localStorage.setItem('kababeats-theme-mode', themePreferences.mode);
+  
+  // Apply custom theme if available
+  if (themePreferences.customTheme) {
+    const { primary, accent, radius } = themePreferences.customTheme;
+    
+    // Convert hex to HSL for CSS variables
+    const primaryHsl = hexToHslVar(primary);
+    const accentHsl = hexToHslVar(accent);
+    
+    // Apply CSS variables
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primaryHsl);
+    root.style.setProperty('--accent', accentHsl);
+    root.style.setProperty('--radius', `${radius}rem`);
+    
+    // Save to localStorage for persistence
+    const customThemeVars = {
+      '--primary': primaryHsl,
+      '--accent': accentHsl,
+      '--radius': `${radius}rem`
+    };
+    localStorage.setItem('custom-theme-vars-v1', JSON.stringify(customThemeVars));
+  }
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -51,7 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedAccessToken && savedRefreshToken && savedUser) {
       setAccessToken(savedAccessToken);
       setRefreshToken(savedRefreshToken);
-      setUser(JSON.parse(savedUser));
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      
+      // Load user's theme preferences
+      if (userData.themePreferences) {
+        loadUserThemePreferences(userData.themePreferences);
+      }
     }
     setLoading(false);
   }, []);
@@ -82,6 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kababeats-user', JSON.stringify(userData));
       localStorage.setItem('kababeats-access-token', accessToken);
       localStorage.setItem('kababeats-refresh-token', refreshTokenData);
+      
+      // Load user's theme preferences
+      if (userData.themePreferences) {
+        loadUserThemePreferences(userData.themePreferences);
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -93,19 +116,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string, username: string, firstName?: string, lastName?: string, country?: string) => {
     setLoading(true);
     try {
+      // Get current theme preferences from localStorage
+      const currentTheme = localStorage.getItem('kababeats-theme-mode') || 'system';
+      const customTheme = localStorage.getItem('custom-theme-vars-v1');
+      
+      const themePreferences: {
+        mode: 'light' | 'dark' | 'system';
+        customTheme?: {
+          primary: string;
+          accent: string;
+          radius: number;
+        };
+      } = {
+        mode: currentTheme as 'light' | 'dark' | 'system',
+      };
+
+      if (customTheme) {
+        try {
+          const parsedCustomTheme = JSON.parse(customTheme);
+          
+          // Convert HSL to hex if needed
+          const convertToHex = (color: string): string => {
+            if (color.startsWith('#')) return color;
+            if (color.includes('hsl') || color.includes('%')) {
+              // Convert HSL to hex
+              const hslMatch = color.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+              if (hslMatch) {
+                const h = parseInt(hslMatch[1]);
+                const s = parseInt(hslMatch[2]);
+                const l = parseInt(hslMatch[3]);
+                return hslToHex(h, s, l);
+              }
+            }
+            return '#000000'; // fallback
+          };
+
+          themePreferences.customTheme = {
+            primary: convertToHex(parsedCustomTheme['--primary'] || '#000000'),
+            accent: convertToHex(parsedCustomTheme['--accent'] || '#333333'),
+            radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || 0.75,
+          };
+        } catch (error) {
+          console.error('Error parsing custom theme:', error);
+        }
+      }
+
+      const signupData = { 
+        email, 
+        password, 
+        username, 
+        firstName, 
+        lastName, 
+        country: country || 'Nigeria',
+        themePreferences
+      };
+      
+      console.log('AuthContext: Sending signup data:', signupData);
+      
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          email, 
-          password, 
-          username, 
-          firstName, 
-          lastName, 
-          country: country || 'Nigeria' 
-        }),
+        body: JSON.stringify(signupData),
       });
 
       if (!response.ok) {
@@ -159,6 +232,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signupWithGoogle = async (username: string, country: string = 'Nigeria') => {
+    // Store theme preferences for Google OAuth callback
+    const currentTheme = localStorage.getItem('kababeats-theme-mode') || 'system';
+    const customTheme = localStorage.getItem('custom-theme-vars-v1');
+    
+    const themePreferences: {
+      mode: 'light' | 'dark' | 'system';
+      customTheme?: {
+        primary: string;
+        accent: string;
+        radius: number;
+      };
+    } = {
+      mode: currentTheme as 'light' | 'dark' | 'system',
+    };
+
+    if (customTheme) {
+      try {
+        const parsedCustomTheme = JSON.parse(customTheme);
+        
+        // Convert HSL to hex if needed
+        const convertToHex = (color: string): string => {
+          if (color.startsWith('#')) return color;
+          if (color.includes('hsl') || color.includes('%')) {
+            // Convert HSL to hex
+            const hslMatch = color.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+            if (hslMatch) {
+              const h = parseInt(hslMatch[1]);
+              const s = parseInt(hslMatch[2]);
+              const l = parseInt(hslMatch[3]);
+              return hslToHex(h, s, l);
+            }
+          }
+          return '#000000'; // fallback
+        };
+
+        themePreferences.customTheme = {
+          primary: convertToHex(parsedCustomTheme['--primary'] || '#000000'),
+          accent: convertToHex(parsedCustomTheme['--accent'] || '#333333'),
+          radius: parseFloat(parsedCustomTheme['--radius']?.replace('rem', '')) || 0.75,
+        };
+      } catch (error) {
+        console.error('Error parsing custom theme:', error);
+      }
+    }
+
+    // Store theme preferences for OAuth callback
+    localStorage.setItem('oauth-theme-preferences', JSON.stringify(themePreferences));
+    localStorage.setItem('oauth-username', username);
+    localStorage.setItem('oauth-country', country);
+    
     // For Google OAuth, signup and login are the same flow
     await loginWithGoogle();
   };
@@ -187,6 +310,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(userData);
       localStorage.setItem('kababeats-user', JSON.stringify(userData));
+      
+      // Load user's theme preferences
+      if (userData.themePreferences) {
+        loadUserThemePreferences(userData.themePreferences);
+      }
     } catch (error) {
       console.error('OAuth callback error:', error);
       throw error;
@@ -220,6 +348,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateThemePreferences = async (themePreferences: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  }) => {
+    if (!accessToken) {
+      throw new Error('Not authenticated');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/theme-preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ themePreferences }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update theme preferences');
+      }
+
+      const data = await response.json();
+      const updatedUser = data.data.user;
+      
+      setUser(updatedUser);
+      localStorage.setItem('kababeats-user', JSON.stringify(updatedUser));
+      
+      // Apply the updated theme preferences immediately
+      loadUserThemePreferences(themePreferences);
+    } catch (error) {
+      console.error('Update theme preferences error:', error);
+      throw error;
+    }
+  };
+
+  const getThemePreferences = async () => {
+    if (!accessToken) {
+      throw new Error('Not authenticated');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/theme-preferences`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get theme preferences');
+      }
+
+      const data = await response.json();
+      return data.data.themePreferences;
+    } catch (error) {
+      console.error('Get theme preferences error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -233,6 +428,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       accessToken,
       refreshToken,
+      updateThemePreferences,
+      getThemePreferences,
     }}>
       {children}
     </AuthContext.Provider>

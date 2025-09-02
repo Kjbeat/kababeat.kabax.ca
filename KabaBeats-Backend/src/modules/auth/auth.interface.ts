@@ -20,6 +20,14 @@ export interface RegisterData {
   firstName?: string;
   lastName?: string;
   country?: string;
+  themePreferences?: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  };
 }
 
 export interface GoogleAuthData {
@@ -29,6 +37,14 @@ export interface GoogleAuthData {
   lastName?: string;
   avatar?: string;
   country?: string;
+  themePreferences?: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  };
 }
 
 export interface AuthResponse {
@@ -76,6 +92,22 @@ export interface IAuthService {
   getProfile(userId: string): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
   updateProfile(userId: string, data: Partial<IUser>): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
   deleteAccount(userId: string, password: string): Promise<void>;
+  updateThemePreferences(userId: string, themePreferences: {
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  }): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
+  getThemePreferences(userId: string): Promise<{
+    mode: 'light' | 'dark' | 'system';
+    customTheme?: {
+      primary: string;
+      accent: string;
+      radius: number;
+    };
+  } | null>;
 }
 
 // Auth controller methods interface
@@ -95,4 +127,6 @@ export interface IAuthController {
   getProfile(req: AuthRequest, res: any, next: any): Promise<void>;
   updateProfile(req: AuthRequest, res: any, next: any): Promise<void>;
   deleteAccount(req: AuthRequest, res: any, next: any): Promise<void>;
+  updateThemePreferences(req: AuthRequest, res: any, next: any): Promise<void>;
+  getThemePreferences(req: AuthRequest, res: any, next: any): Promise<void>;
 }

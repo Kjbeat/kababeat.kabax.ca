@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
-interface FavoritesContextType {
-  likedBeats: Set<string>;
-  toggleLike: (beatId: string, beatTitle?: string) => void;
-  isLiked: (beatId: string) => boolean;
-}
+import { FavoritesContextType } from '../interface-types/favorites';
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 

@@ -23,7 +23,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "dark",
-  storageKey = "beathaus-ui-theme",
+  storageKey = "kababeats-theme-mode",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(

@@ -1,12 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-type Language = 'en' | 'fr';
-
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
-}
+import { Language, LanguageContextType } from '../interface-types/language';
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 

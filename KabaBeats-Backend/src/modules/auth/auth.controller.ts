@@ -325,4 +325,51 @@ export class AuthController implements IAuthController {
       next(error);
     }
   };
+
+  updateThemePreferences = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      const { themePreferences } = req.body;
+
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      if (!themePreferences) {
+        throw new CustomError('Theme preferences are required', 400);
+      }
+
+      const user = await this.authService.updateThemePreferences(userId, themePreferences);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: { user },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getThemePreferences = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const themePreferences = await this.authService.getThemePreferences(userId);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: { themePreferences },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

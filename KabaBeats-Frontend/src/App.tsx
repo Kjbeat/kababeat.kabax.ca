@@ -46,7 +46,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="beathaus-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="kababeats-theme-mode">
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
