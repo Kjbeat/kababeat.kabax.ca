@@ -66,9 +66,9 @@ export interface IAuthService {
   forgotPassword(email: string): Promise<{ success: boolean; message: string }>;
   resetPassword(token: string, password: string): Promise<void>;
   changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
+  deleteAccount(userId: string, password: string): Promise<void>;
   getProfile(userId: string): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
   updateProfile(userId: string, data: Partial<IUser>): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
-  deleteAccount(userId: string, password: string): Promise<void>;
   updateThemePreferences(userId: string, themePreferences: {
     mode: 'light' | 'dark' | 'system';
     customTheme?: {

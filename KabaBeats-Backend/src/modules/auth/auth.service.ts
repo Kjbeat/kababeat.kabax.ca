@@ -3,6 +3,7 @@ import { IAuthService, LoginCredentials, RegisterData, AuthResponse, ChangePassw
 import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
 import { generateToken, generateRefreshToken, verifyRefreshToken, comparePassword } from '@/utils/auth';
+import bcrypt from 'bcryptjs';
 import { IUser } from '@/types';
 import { emailService } from '@/utils/emailService';
 import { generateOTP, generateOTPExpiration, isOTPExpired } from '@/utils/otpGenerator';
@@ -504,8 +505,30 @@ export class AuthService implements IAuthService {
         throw new CustomError('User not found', 404);
       }
 
+      // Check for username conflicts if username is being updated
+      if (data.username && data.username !== user.username) {
+        const existingUser = await User.findOne({ 
+          username: data.username,
+          _id: { $ne: userId } // Exclude current user
+        });
+        if (existingUser) {
+          throw new CustomError('Username already taken', 400);
+        }
+      }
+
+      // Check for email conflicts if email is being updated
+      if (data.email && data.email !== user.email) {
+        const existingUser = await User.findOne({ 
+          email: data.email,
+          _id: { $ne: userId } // Exclude current user
+        });
+        if (existingUser) {
+          throw new CustomError('Email already registered', 400);
+        }
+      }
+
       // Update allowed fields
-      const allowedFields = ['firstName', 'lastName', 'bio', 'country', 'socialLinks'];
+      const allowedFields = ['username', 'email', 'firstName', 'lastName', 'bio', 'country', 'socialLinks'];
       allowedFields.forEach(field => {
         if (data[field as keyof IUser] !== undefined) {
           (user as any)[field] = data[field as keyof IUser];
@@ -688,6 +711,8 @@ export class AuthService implements IAuthService {
       throw error;
     }
   }
+
+
 
   private sanitizeUser(user: IUser): Omit<IUser, 'password' | 'refreshTokens'> {
     const { password, refreshTokens, emailVerificationOTP, emailVerificationExpires, ...sanitizedUser } = user.toObject();

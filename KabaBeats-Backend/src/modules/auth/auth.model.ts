@@ -116,15 +116,30 @@ const userSchema = new Schema<IUserDocument>({
     },
     instagram: {
       type: String,
-      match: [/^@?[a-zA-Z0-9_.]+$/, 'Please enter a valid Instagram username'],
+      validate: {
+        validator: function(v: string) {
+          return !v || /^https?:\/\/(www\.)?instagram\.com\/[a-zA-Z0-9._]+$/.test(v);
+        },
+        message: 'Instagram URL must be valid',
+      },
     },
     twitter: {
       type: String,
-      match: [/^@?[a-zA-Z0-9_]+$/, 'Please enter a valid Twitter username'],
+      validate: {
+        validator: function(v: string) {
+          return !v || /^https?:\/\/(www\.)?twitter\.com\/[a-zA-Z0-9_]+$/.test(v);
+        },
+        message: 'Twitter URL must be valid',
+      },
     },
     youtube: {
       type: String,
-      match: [/^@?[a-zA-Z0-9_.-]+$/, 'Please enter a valid YouTube channel'],
+      validate: {
+        validator: function(v: string) {
+          return !v || /^https?:\/\/(www\.)?youtube\.com\/@[a-zA-Z0-9._-]+$/.test(v);
+        },
+        message: 'YouTube URL must be valid',
+      },
     },
   },
   // Theme preferences

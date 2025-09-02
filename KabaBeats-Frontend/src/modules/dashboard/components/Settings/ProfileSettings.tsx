@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
 import Cropper from "react-easy-crop";
@@ -11,22 +11,98 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { User, Camera } from "lucide-react";
+import { User, Camera, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function ProfileSettings() {
   const { t } = useLanguage();
+  const { user, updateProfile } = useAuth();
+  const { toast } = useToast();
   
   const [profileData, setProfileData] = useState({
-    username: "johndoe",
-    displayName: "John Doe",
-    email: "john@example.com",
-    bio: "Hip-hop producer and beat maker from Los Angeles. Creating fire beats since 2018.",
-    website: "https://johndoebeats.com",
-    instagram: "@johndoebeats",
-    twitter: "@johndoebeats",
-    youtube: "johndoebeats",
+    username: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    bio: "",
+    website: "",
+    instagram: "",
+    twitter: "",
+    youtube: "",
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load profile data on component mount
+  useEffect(() => {
+    if (user) {
+      // Extract handles from full URLs
+      const extractHandle = (url: string, platform: string) => {
+        if (!url) return "";
+        if (platform === 'website') return url.replace(/^https?:\/\//, '');
+        if (platform === 'instagram') return url.replace(/^https?:\/\/(www\.)?instagram\.com\//, '');
+        if (platform === 'twitter') return url.replace(/^https?:\/\/(www\.)?twitter\.com\//, '');
+        if (platform === 'youtube') return url.replace(/^https?:\/\/(www\.)?youtube\.com\/@/, '');
+        return url;
+      };
+
+      setProfileData({
+        username: user.username || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        bio: user.bio || "",
+        website: extractHandle(user.socialLinks?.website || "", 'website'),
+        instagram: extractHandle(user.socialLinks?.instagram || "", 'instagram'),
+        twitter: extractHandle(user.socialLinks?.twitter || "", 'twitter'),
+        youtube: extractHandle(user.socialLinks?.youtube || "", 'youtube'),
+      });
+    }
+  }, [user]);
+
+  // Save profile data
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      // Construct full URLs for social links
+      const socialLinks = {
+        website: profileData.website ? (profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`) : '',
+        instagram: profileData.instagram ? `https://instagram.com/${profileData.instagram}` : '',
+        twitter: profileData.twitter ? `https://twitter.com/${profileData.twitter}` : '',
+        youtube: profileData.youtube ? `https://youtube.com/@${profileData.youtube}` : '',
+      };
+
+      const updateData = {
+        username: profileData.username,
+        email: profileData.email,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        bio: profileData.bio,
+        socialLinks,
+      };
+
+      await updateProfile(updateData);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update profile. Please try again.";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Modal state
   const [open, setOpen] = useState(false);
@@ -77,8 +153,10 @@ export function ProfileSettings() {
         {/* Profile Picture */}
         <div className="flex items-center space-x-4">
           <Avatar className="h-20 w-20">
-            <AvatarImage src="/placeholder.svg" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+            <AvatarFallback>
+              {profileData.firstName?.[0] || profileData.username?.[0] || 'U'}
+            </AvatarFallback>
           </Avatar>
           <div>
             <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
@@ -101,27 +179,43 @@ export function ProfileSettings() {
               id="username"
               value={profileData.username}
               onChange={(e) => setProfileData({...profileData, username: e.target.value})}
+              placeholder="Enter username"
+            />
+            <p className="text-xs text-muted-foreground">3-30 characters, letters, numbers, and underscores only</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">{t('profile.emailAddress')}</Label>
+            <Input
+              id="email"
+              type="email"
+              value={profileData.email}
+              onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+              placeholder="Enter email address"
+            />
+            <p className="text-xs text-muted-foreground">Must be a valid email address</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">{t('profile.firstName')}</Label>
+            <Input
+              id="firstName"
+              value={profileData.firstName}
+              onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="display-name">{t('profile.displayName')}</Label>
+            <Label htmlFor="lastName">{t('profile.lastName')}</Label>
             <Input
-              id="display-name"
-              value={profileData.displayName}
-              onChange={(e) => setProfileData({...profileData, displayName: e.target.value})}
+              id="lastName"
+              value={profileData.lastName}
+              onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">{t('profile.emailAddress')}</Label>
-          <Input
-            id="email"
-            type="email"
-            value={profileData.email}
-            onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-          />
-        </div>
+
 
         <div className="space-y-2">
           <Label htmlFor="bio">{t('profile.bio')}</Label>
@@ -145,37 +239,83 @@ export function ProfileSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="website">{t('profile.website')}</Label>
-              <Input
-                id="website"
-                value={profileData.website}
-                onChange={(e) => setProfileData({...profileData, website: e.target.value})}
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                  https://
+                </span>
+                <Input
+                  id="website"
+                  value={profileData.website}
+                  onChange={(e) => setProfileData({...profileData, website: e.target.value})}
+                  placeholder="yourwebsite.com"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="instagram">{t('profile.instagram')}</Label>
-              <Input
-                id="instagram"
-                value={profileData.instagram}
-                onChange={(e) => setProfileData({...profileData, instagram: e.target.value})}
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                  instagram.com/
+                </span>
+                <Input
+                  id="instagram"
+                  value={profileData.instagram}
+                  onChange={(e) => setProfileData({...profileData, instagram: e.target.value})}
+                  placeholder="yourusername"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="twitter">{t('profile.twitter')}</Label>
-              <Input
-                id="twitter"
-                value={profileData.twitter}
-                onChange={(e) => setProfileData({...profileData, twitter: e.target.value})}
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                  twitter.com/
+                </span>
+                <Input
+                  id="twitter"
+                  value={profileData.twitter}
+                  onChange={(e) => setProfileData({...profileData, twitter: e.target.value})}
+                  placeholder="yourusername"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="youtube">{t('profile.youtube')}</Label>
-              <Input
-                id="youtube"
-                value={profileData.youtube}
-                onChange={(e) => setProfileData({...profileData, youtube: e.target.value})}
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                  youtube.com/@
+                </span>
+                <Input
+                  id="youtube"
+                  value={profileData.youtube}
+                  onChange={(e) => setProfileData({...profileData, youtube: e.target.value})}
+                  placeholder="yourchannel"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-end pt-4">
+          <Button 
+            onClick={handleSaveProfile} 
+            disabled={isSaving}
+            className="min-w-[120px]"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </Button>
         </div>
       </CardContent>
       </Card>

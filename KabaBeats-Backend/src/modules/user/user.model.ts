@@ -147,27 +147,27 @@ const userProfileSchema = new Schema<IUserProfile>({
       type: String,
       validate: {
         validator: function(v: string) {
-          return !v || /^@?[a-zA-Z0-9._]+$/.test(v);
+          return !v || /^https?:\/\/(www\.)?instagram\.com\/[a-zA-Z0-9._]+$/.test(v);
         },
-        message: 'Instagram handle must be valid',
+        message: 'Instagram URL must be valid',
       },
     },
     twitter: {
       type: String,
       validate: {
         validator: function(v: string) {
-          return !v || /^@?[a-zA-Z0-9_]+$/.test(v);
+          return !v || /^https?:\/\/(www\.)?twitter\.com\/[a-zA-Z0-9_]+$/.test(v);
         },
-        message: 'Twitter handle must be valid',
+        message: 'Twitter URL must be valid',
       },
     },
     youtube: {
       type: String,
       validate: {
         validator: function(v: string) {
-          return !v || /^@?[a-zA-Z0-9._-]+$/.test(v);
+          return !v || /^https?:\/\/(www\.)?youtube\.com\/@[a-zA-Z0-9._-]+$/.test(v);
         },
-        message: 'YouTube handle must be valid',
+        message: 'YouTube URL must be valid',
       },
     },
     soundcloud: {

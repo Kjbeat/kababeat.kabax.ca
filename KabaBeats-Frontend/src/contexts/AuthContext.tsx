@@ -568,6 +568,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: {
+    username?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    socialLinks?: {
+      website?: string;
+      instagram?: string;
+      twitter?: string;
+      youtube?: string;
+    };
+  }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to update profile');
+      }
+
+      // Update local user state
+      if (user) {
+        setUser({
+          ...user,
+          ...data,
+        });
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -585,6 +627,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       getThemePreferences,
       verifyEmailOTP,
       resendVerificationOTP,
+      updateProfile,
     }}>
       {children}
     </AuthContext.Provider>

@@ -2,8 +2,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, AlertTriangle, Trash2 } from "lucide-react"
-import React from "react"
+import { Eye, EyeOff, AlertTriangle, Trash2, Loader2 } from "lucide-react"
+import React, { useState } from "react"
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -16,6 +16,8 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
 // Kept props optional for compatibility, but only password + delete are used now
 interface PrivacySettingsProps {
@@ -42,6 +44,8 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
   setShowPassword,
 }) => {
   const { t } = useLanguage();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
   
   // Fallback local state if not provided by parent
   const [localShowPassword, setLocalShowPassword] = React.useState(false)
@@ -49,6 +53,125 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
   const sh = showPassword ?? localShowPassword
 
   const [confirmDelete, setConfirmDelete] = React.useState("")
+  
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Handle password change
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "New password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch('/api/v1/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Password changed successfully!",
+        });
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        throw new Error(data.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to change password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (confirmDelete !== "DELETE") {
+      toast({
+        title: "Error",
+        description: "Please type DELETE to confirm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const response = await fetch('/api/v1/auth/account', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          password: passwordData.currentPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Account Deleted",
+          description: "Your account has been permanently deleted",
+        });
+        // Logout and redirect
+        await logout();
+        window.location.href = '/';
+      } else {
+        throw new Error(data.message || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   return (
     <Card>
@@ -71,6 +194,8 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
                 type={sh ? "text" : "password"}
                 placeholder={t('privacy.enterCurrentPassword')}
                 autoComplete="current-password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
               />
               <Button
                 type="button"
@@ -92,6 +217,8 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
               type="password"
               placeholder={t('privacy.enterNewPassword')}
               autoComplete="new-password"
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
             />
           </div>
 
@@ -102,12 +229,29 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
               type="password"
               placeholder={t('privacy.confirmNewPasswordPlaceholder')}
               autoComplete="new-password"
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="default">{t('privacy.updatePasswordButton')}</Button>
-            <Button variant="outline" type="button">{t('privacy.sendResetLink')}</Button>
+            <Button 
+              variant="default" 
+              onClick={handleChangePassword}
+              disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+            >
+              {isChangingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Changing...
+                </>
+              ) : (
+                t('privacy.updatePasswordButton')
+              )}
+            </Button>
+            <Button variant="outline" type="button" onClick={() => window.location.href = '/forgot-password'}>
+              {t('privacy.sendResetLink')}
+            </Button>
           </div>
         </section>
 
@@ -145,9 +289,17 @@ const PrivacySettings: React.FC<PrivacySettingsProps> = ({
                     <AlertDialogCancel>{t('privacy.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      disabled={confirmDelete !== "DELETE"}
+                      disabled={confirmDelete !== "DELETE" || isDeletingAccount}
+                      onClick={handleDeleteAccount}
                     >
-                      {t('privacy.permanentlyDelete')}
+                      {isDeletingAccount ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        t('privacy.permanentlyDelete')
+                      )}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

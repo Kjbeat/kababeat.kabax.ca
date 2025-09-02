@@ -50,15 +50,17 @@ const changePasswordSchema = Joi.object({
 });
 
 const updateProfileSchema = Joi.object({
+  username: Joi.string().min(3).max(30).pattern(/^[a-zA-Z0-9_]+$/).optional(),
+  email: Joi.string().email().optional(),
   firstName: Joi.string().max(50).optional(),
   lastName: Joi.string().max(50).optional(),
-  bio: Joi.string().max(500).optional(),
+  bio: Joi.string().max(500).allow('').optional(),
   country: Joi.string().max(50).optional(),
   socialLinks: Joi.object({
-    website: Joi.string().uri().optional(),
-    instagram: Joi.string().max(50).optional(),
-    twitter: Joi.string().max(50).optional(),
-    youtube: Joi.string().max(50).optional(),
+    website: Joi.string().uri().allow('').optional(),
+    instagram: Joi.string().uri().allow('').optional(),
+    twitter: Joi.string().uri().allow('').optional(),
+    youtube: Joi.string().uri().allow('').optional(),
   }).optional(),
 });
 

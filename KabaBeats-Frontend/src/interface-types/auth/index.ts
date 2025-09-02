@@ -5,6 +5,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   avatar?: string;
+  bio?: string;
   role: 'creator' | 'admin' | 'user';
   isVerified: boolean;
   country: string;
@@ -54,4 +55,17 @@ export interface AuthContextType {
   } | null>;
   verifyEmailOTP: (email: string, otp: string) => Promise<void>;
   resendVerificationOTP: (email: string) => Promise<void>;
+  updateProfile: (data: {
+    username?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    socialLinks?: {
+      website?: string;
+      instagram?: string;
+      twitter?: string;
+      youtube?: string;
+    };
+  }) => Promise<void>;
 }
