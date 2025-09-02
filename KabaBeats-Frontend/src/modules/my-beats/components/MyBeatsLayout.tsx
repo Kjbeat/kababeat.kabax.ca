@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, Download, Edit, Eye, MoreHorizontal, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Beat } from "@/interface-types/media-player";
 import { getArtworkUrl } from "@/utils/artwork";
+import { formatDistanceToNow, format } from "date-fns";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -112,7 +113,17 @@ export function MyBeatsLayout() {
   }, [accessToken, user?.id, pageSize, searchTerm, activeTab, toast]);
 
   // Derived filtered beats (now just use the API data directly)
-  const filteredBeats = beats;
+  // Ensure unique beats by ID to prevent React key warnings
+  const filteredBeats = useMemo(() => {
+    const uniqueBeats = new Map();
+    beats.forEach(beat => {
+      const id = beat._id || beat.id;
+      if (id && !uniqueBeats.has(id)) {
+        uniqueBeats.set(id, beat);
+      }
+    });
+    return Array.from(uniqueBeats.values());
+  }, [beats]);
 
   // Initial data load
   useEffect(() => {
@@ -262,9 +273,113 @@ export function MyBeatsLayout() {
     }
   };
 
+  // Handle edit save with files - this will be called by EditBeatDialog when files are uploaded
+  const handleEditSaveWithFiles = async (updated: Partial<Beat>) => {
+    // Just refresh the beats list to get the updated data from server
+    await fetchBeats(1, true);
+    
+    toast({
+      title: "Success",
+      description: "Beat updated successfully.",
+    });
+  };
+
   const handleView = (beat: Beat) => {
     // Navigate to beat page (assumed route pattern /beats/:id)
     navigate(`/beats/${beat._id || beat.id}`);
+  };
+
+  const handleDownload = async (beat: Beat, format: 'mp3' | 'wav' | 'stems') => {
+    if (!accessToken) return;
+    
+    try {
+      const beatId = beat._id || beat.id;
+      let downloadUrl: string;
+      
+      if (format === 'stems') {
+        // Download stems ZIP file - use direct R2 URL
+        if (!beat.stemsStorageKey) {
+          toast({
+            title: "No Stems Available",
+            description: "This beat doesn't have stems available for download.",
+            variant: "destructive"
+          });
+          return;
+        }
+        downloadUrl = `https://pub-6f3847c4d3f4471284d44c6913bcf6f0.r2.dev/${beat.stemsStorageKey}`;
+      } else {
+        // Download audio file (MP3/WAV) - use API endpoint to get proper download URL
+        if (!beat.storageKey) {
+          toast({
+            title: "No Audio Available",
+            description: "This beat doesn't have audio available for download.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        console.log('🎵 MyBeatsLayout: Getting download URL from API for beat:', beatId);
+        
+        // Get download URL from API
+        const response = await fetch(`${API_BASE_URL}/beats/${beatId}/audio`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get download URL');
+        }
+        
+        const data = await response.json();
+        downloadUrl = data.data.audioUrl;
+        
+        console.log('🎵 MyBeatsLayout: Got download URL from API:', downloadUrl);
+      }
+      
+      console.log('🎵 MyBeatsLayout: Starting download for:', {
+        beatId,
+        format,
+        downloadUrl,
+        fileName: `${beat.title}_${format.toUpperCase()}.${format === 'stems' ? 'zip' : format}`
+      });
+      
+      // Force download by fetching the file and creating a blob
+      console.log('🎵 MyBeatsLayout: Fetching file for download...');
+      
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch file for download');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${beat.title}_${format.toUpperCase()}.${format === 'stems' ? 'zip' : format}`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Started",
+        description: `Downloading ${format.toUpperCase()} file for "${beat.title}"`,
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download the file. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRowClick = (beat: Beat) => (e: React.MouseEvent) => {
@@ -384,11 +499,10 @@ export function MyBeatsLayout() {
                     <TableHead>{t('myBeats.title')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('myBeats.bpm')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('myBeats.key')}</TableHead>
-                    <TableHead className="hidden lg:table-cell">{t('myBeats.genre')}</TableHead>
                     <TableHead className="hidden xl:table-cell">{t('myBeats.date')}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t('myBeats.status')}</TableHead>
                     <TableHead className="hidden lg:table-cell">{t('myBeats.streams')}</TableHead>
-                    <TableHead className="hidden lg:table-cell">{t('myBeats.sales')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('myBeats.scheduledFor')}</TableHead>
                     <TableHead className="text-right">{t('myBeats.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -423,18 +537,40 @@ export function MyBeatsLayout() {
                           <div className="md:hidden text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
                             <span>{beat.bpm} {t('myBeats.bpm')}</span>
                             <span>{beat.key}</span>
-                            <span className="hidden xs:inline">{beat.genre}</span>
                             <span>{getStatusBadge(beat.status)}</span>
+                            {beat.status === 'scheduled' && beat.scheduledDate && (
+                              <span className="text-blue-600">
+                                {format(new Date(beat.scheduledDate), 'MMM d, yyyy')} {new Date(beat.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({formatDistanceToNow(new Date(beat.scheduledDate), { addSuffix: true })})
+                              </span>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{beat.bpm}</TableCell>
                       <TableCell className="hidden md:table-cell">{beat.key}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{beat.genre}</TableCell>
                       <TableCell className="hidden xl:table-cell">{new Date(beat.uploadDate || beat.date).toLocaleDateString()}</TableCell>
                       <TableCell className="hidden sm:table-cell">{getStatusBadge(beat.status)}</TableCell>
                       <TableCell className="hidden lg:table-cell">{beat.plays?.toLocaleString() || 0}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{beat.sales || 0}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {beat.status === 'scheduled' && beat.scheduledDate ? (
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {format(new Date(beat.scheduledDate), 'MMM d, yyyy')}
+                            </div>
+                            <div className="text-muted-foreground">
+                              {new Date(beat.scheduledDate).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                            <div className="text-xs text-blue-600">
+                              {formatDistanceToNow(new Date(beat.scheduledDate), { addSuffix: true })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -455,15 +591,15 @@ export function MyBeatsLayout() {
                               <Trash2 className="h-4 w-4 mr-2" />
                               {t('myBeats.delete')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDownload(beat, 'mp3')}>
                               <Download className="h-4 w-4 mr-2" />
                               {t('myBeats.downloadMP3')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDownload(beat, 'wav')}>
                               <Download className="h-4 w-4 mr-2" />
                               {t('myBeats.downloadWAV')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDownload(beat, 'stems')}>
                               <Download className="h-4 w-4 mr-2" />
                               {t('myBeats.downloadStems')}
                             </DropdownMenuItem>
@@ -493,7 +629,7 @@ export function MyBeatsLayout() {
           )}
         </TabsContent>
       </Tabs>
-  <EditBeatDialog open={editOpen} onOpenChange={setEditOpen} beat={editingBeat} onSave={handleEditSave} />
+  <EditBeatDialog open={editOpen} onOpenChange={setEditOpen} beat={editingBeat} onSave={handleEditSave} onSaveWithFiles={handleEditSaveWithFiles} onRefresh={fetchBeats} />
     </div>
   );
 }

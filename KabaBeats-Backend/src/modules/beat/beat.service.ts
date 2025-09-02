@@ -343,6 +343,130 @@ export class BeatService implements IBeatService {
     }
   }
 
+  async updateBeatWithFiles(beatId: string, userId: string, updateData: UpdateBeatRequest, audioFile?: Express.Multer.File, artworkFile?: Express.Multer.File, stemsFile?: Express.Multer.File): Promise<BeatResponse> {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(beatId)) {
+        throw new CustomError('Invalid beat ID', 400);
+      }
+
+      const beat = await Beat.findOne({ _id: beatId, owner: userId });
+      if (!beat) {
+        throw new CustomError('Beat not found or access denied', 404);
+      }
+
+      // Check for title conflicts if title is being updated
+      if (updateData.title && updateData.title !== beat.title) {
+        const existingBeat = await Beat.findOne({ 
+          title: updateData.title, 
+          owner: userId,
+          _id: { $ne: beatId }
+        });
+        
+        if (existingBeat) {
+          throw new CustomError('A beat with this title already exists', 400);
+        }
+      }
+
+      // Handle file uploads if provided
+      if (audioFile) {
+        // Delete old audio file
+        if (beat.storageKey) {
+          try {
+            await deleteStorageFile(beat.storageKey);
+            logger.info(`Deleted old audio file: ${beat.storageKey}`);
+          } catch (error) {
+            logger.warn(`Failed to delete old audio file: ${beat.storageKey}`, error);
+          }
+        }
+
+        // Upload new audio file
+        const audioUploadRequest = await this.mediaService.generateUploadUrl({
+          userId,
+          fileType: 'audio',
+          originalName: audioFile.originalname,
+          contentType: audioFile.mimetype,
+          size: audioFile.size,
+          beatId: beatId
+        });
+
+        await this.uploadFileToR2(audioFile, audioUploadRequest.uploadUrl);
+        beat.storageKey = audioUploadRequest.key;
+        beat.originalFileName = audioFile.originalname;
+        beat.fileSize = audioFile.size;
+        beat.audioFormat = audioFile.mimetype.includes('wav') ? 'wav' : 'mp3';
+      }
+
+      if (artworkFile) {
+        // Delete old artwork file
+        if (beat.artwork) {
+          try {
+            await deleteStorageFile(beat.artwork);
+            logger.info(`Deleted old artwork file: ${beat.artwork}`);
+          } catch (error) {
+            logger.warn(`Failed to delete old artwork file: ${beat.artwork}`, error);
+          }
+        }
+
+        // Upload new artwork file
+        const artworkUploadRequest = await this.mediaService.generateUploadUrl({
+          userId,
+          fileType: 'artwork',
+          originalName: artworkFile.originalname,
+          contentType: artworkFile.mimetype,
+          size: artworkFile.size,
+          beatId: beatId
+        });
+
+        await this.uploadFileToR2(artworkFile, artworkUploadRequest.uploadUrl);
+        beat.artwork = artworkUploadRequest.key;
+      }
+
+      if (stemsFile) {
+        // Delete old stems file
+        if (beat.stemsStorageKey) {
+          try {
+            await deleteStorageFile(beat.stemsStorageKey);
+            logger.info(`Deleted old stems file: ${beat.stemsStorageKey}`);
+          } catch (error) {
+            logger.warn(`Failed to delete old stems file: ${beat.stemsStorageKey}`, error);
+          }
+        }
+
+        // Upload new stems file
+        const stemsUploadRequest = await this.mediaService.generateUploadUrl({
+          userId,
+          fileType: 'stems',
+          originalName: stemsFile.originalname,
+          contentType: stemsFile.mimetype,
+          size: stemsFile.size,
+          beatId: beatId
+        });
+
+        await this.uploadFileToR2(stemsFile, stemsUploadRequest.uploadUrl);
+        beat.stemsStorageKey = stemsUploadRequest.key;
+        beat.stemsOriginalFileName = stemsFile.originalname;
+        beat.stemsFileSize = stemsFile.size;
+      }
+
+      // Update beat metadata
+      Object.assign(beat, updateData);
+      beat.lastModified = new Date();
+      
+      await beat.save();
+
+      logger.info(`Beat updated with files: ${beatId} by user: ${userId}`);
+
+      return {
+        success: true,
+        data: beat,
+        message: 'Beat updated successfully'
+      };
+    } catch (error) {
+      logger.error('Error updating beat with files:', error);
+      throw error;
+    }
+  }
+
   async deleteBeat(beatId: string, userId: string): Promise<BeatResponse> {
     try {
       if (!mongoose.Types.ObjectId.isValid(beatId)) {

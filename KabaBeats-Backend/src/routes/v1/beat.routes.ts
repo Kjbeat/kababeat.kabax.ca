@@ -11,7 +11,8 @@ const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 200 * 1024 * 1024, // 200MB
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB - increased for very large audio files and stems
+    fieldSize: 10 * 1024 * 1024, // 10MB for form fields
   },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === 'audio') {
@@ -64,9 +65,10 @@ const createBeatSchema = Joi.object({
   status: Joi.string().optional().valid('draft', 'published', 'scheduled', 'archived'),
   collaborators: Joi.array().items(
     Joi.object({
+      _id: Joi.string().optional(),
       userId: Joi.string().optional(),
       name: Joi.string().required().trim(),
-      email: Joi.string().required().email(),
+      email: Joi.string().optional().email(),
       percent: Joi.number().required().min(0).max(100),
       role: Joi.string().optional().trim()
     })
@@ -98,16 +100,17 @@ const updateBeatSchema = Joi.object({
   allowFreeDownload: Joi.boolean().optional(),
   collaborators: Joi.array().items(
     Joi.object({
+      _id: Joi.string().optional(),
       userId: Joi.string().optional(),
       name: Joi.string().required().trim(),
-      email: Joi.string().required().email(),
+      email: Joi.string().optional().email(),
       percent: Joi.number().required().min(0).max(100),
       role: Joi.string().optional().trim()
     })
   ).optional(),
   scheduledDate: Joi.date().optional().greater('now'),
   status: Joi.string().optional().valid('draft', 'published', 'scheduled', 'archived')
-});
+}).unknown(true);
 
 const scheduleBeatSchema = Joi.object({
   scheduledDate: Joi.date().required().greater('now')
@@ -200,6 +203,18 @@ router.put(
   authMiddleware,
   validateRequest(updateBeatSchema),
   beatController.updateBeat
+);
+
+// Route for updating beats with file uploads
+router.put(
+  '/:id/files',
+  authMiddleware,
+  upload.fields([
+    { name: 'audio', maxCount: 1 },
+    { name: 'artwork', maxCount: 1 },
+    { name: 'stems', maxCount: 1 }
+  ]),
+  beatController.updateBeatWithFiles
 );
 
 router.delete(

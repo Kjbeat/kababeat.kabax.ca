@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,13 @@ import { getCroppedImg } from "../../../utils/imageUtils";
 interface ArtworkUploadStepProps {
   formData: BeatFormData;
   onFormDataChange: (field: keyof BeatFormData, value: unknown) => void;
+  existingArtworkUrl?: string; // URL of existing artwork for editing
 }
 
 const ACCEPTED_IMAGE = ["image/jpeg", "image/png", "image/webp"];
 const MAX_ART_SIZE_MB = 10;
 
-export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadStepProps) {
+export function ArtworkUploadStep({ formData, onFormDataChange, existingArtworkUrl }: ArtworkUploadStepProps) {
   const { t } = useLanguage();
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,33 +35,59 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (artworkFile) {
+    console.log('🎨 ArtworkUploadStep: useEffect triggered', { 
+      hasArtworkFile: !!artworkFile, 
+      hasExistingUrl: !!existingArtworkUrl,
+      artworkFileSize: artworkFile?.size 
+    });
+
+    if (artworkFile && artworkFile.size > 0) {
+      // New file uploaded - create blob URL only once
+      console.log('🎨 ArtworkUploadStep: Creating blob URL for new file');
       const url = URL.createObjectURL(artworkFile);
       setPreviewUrl(url);
       setOriginalImageUrl(url);
-      // Don't automatically open modal - let user decide when to crop
-      return () => URL.revokeObjectURL(url);
+      
+      // Cleanup function to revoke blob URL
+      return () => {
+        console.log('🎨 ArtworkUploadStep: Cleaning up blob URL');
+        URL.revokeObjectURL(url);
+      };
+    } else if (existingArtworkUrl && !artworkFile) {
+      // Existing artwork from beat - use direct URL
+      console.log('🎨 ArtworkUploadStep: Using existing artwork URL');
+      setPreviewUrl(existingArtworkUrl);
+      setOriginalImageUrl(existingArtworkUrl);
     } else {
+      // Clear everything
+      console.log('🎨 ArtworkUploadStep: Clearing all image data');
       setPreviewUrl(null);
       setOriginalImageUrl(null);
       setCroppedImage(null);
       setShowCropModal(false);
     }
-  }, [artworkFile]);
+  }, [artworkFile, existingArtworkUrl]);
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
+    
+    console.log('🎨 ArtworkUploadStep: File selected:', file.name, file.size, 'bytes');
+
     if (!ACCEPTED_IMAGE.includes(file.type)) {
+      console.log('🎨 ArtworkUploadStep: Unsupported format:', file.type);
       setError(t('upload.artwork.unsupportedImageType'));
       return;
     }
     if (file.size > MAX_ART_SIZE_MB * 1024 * 1024) {
+      console.log('🎨 ArtworkUploadStep: File too large:', file.size, 'bytes');
       setError(t('upload.artwork.imageTooLarge').replace('{maxSize}', MAX_ART_SIZE_MB.toString()));
       return;
     }
+    
+    console.log('🎨 ArtworkUploadStep: File accepted, updating form data');
     setError(null);
-  onFormDataChange("artwork", file);
+    onFormDataChange("artwork", file);
   };
 
   const onDrag = (e: React.DragEvent) => {
@@ -76,21 +104,64 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
     handleFiles(e.dataTransfer.files);
   };
 
-  const clearArtwork = () => {
+  const clearArtwork = useCallback(() => {
+    console.log('🎨 ArtworkUploadStep: Clearing artwork');
     onFormDataChange("artwork", null);
     setCroppedImage(null);
+    setPreviewUrl(null);
     setOriginalImageUrl(null);
     setShowCropModal(false);
-  };
+  }, [onFormDataChange]);
+
+  // Memoize the image preview to prevent unnecessary re-renders
+  const imagePreview = useMemo(() => {
+    if (!previewUrl) return null;
+    
+    console.log('🎨 ArtworkUploadStep: Rendering image preview for:', previewUrl);
+    return (
+      <img
+        src={previewUrl}
+        alt="Beat artwork preview"
+        className="w-full h-full object-cover rounded-lg"
+      />
+    );
+  }, [previewUrl]);
 
   const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    console.log('🎨 ArtworkUploadStep: Crop area changed');
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
+
+  // Memoize the cropper component to prevent unnecessary re-renders
+  const cropperComponent = useMemo(() => {
+    if (!originalImageUrl) return null;
+    
+    console.log('🎨 ArtworkUploadStep: Rendering cropper for:', originalImageUrl);
+    return (
+      <Cropper
+        image={originalImageUrl}
+        crop={crop}
+        zoom={zoom}
+        aspect={1}
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={onCropComplete}
+        style={{
+          containerStyle: {
+            width: "100%",
+            height: "400px",
+            position: "relative",
+          },
+        }}
+      />
+    );
+  }, [originalImageUrl, crop, zoom, onCropComplete]);
 
 
 
   const applyCrop = async () => {
     if (croppedAreaPixels && originalImageUrl) {
+      console.log('🎨 ArtworkUploadStep: Applying crop...');
       try {
         const croppedImageUrl = await getCroppedImg(
           originalImageUrl,
@@ -105,7 +176,10 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
           type: 'image/jpeg',
         });
         
+        console.log('🎨 ArtworkUploadStep: Crop applied, new file:', file.name, file.size, 'bytes');
+        // Set the cropped image and update form data
         setCroppedImage(croppedImageUrl);
+        setPreviewUrl(croppedImageUrl); // Update preview to show cropped image
         setShowCropModal(false);
         onFormDataChange("artwork", file);
       } catch (e) {
@@ -185,6 +259,15 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Show preview image */}
+                  {imagePreview && (
+                    <div className="w-full max-w-32 mx-auto">
+                      <div className="w-full h-32 object-cover rounded-lg border border-border/50 overflow-hidden">
+                        {imagePreview}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col items-center gap-3">
                     <div className="relative">
                       <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-green-400/30 to-emerald-400/30 blur-sm animate-pulse" />
@@ -192,10 +275,10 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
                     </div>
                     <div className="text-center">
                       <p className="font-medium text-green-600">
-                        Image uploaded successfully
+                        {croppedImage ? "Artwork cropped and ready!" : "Image uploaded successfully"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {croppedImage ? "Artwork ready!" : "Ready for cropping"}
+                        {croppedImage ? "Perfect for your beat card" : "Ready for cropping"}
                       </p>
                     </div>
                   </div>
@@ -208,6 +291,16 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
                       >
                         <Crop className="h-4 w-4 mr-1" />
                         Crop Image
+                      </Button>
+                    )}
+                    {croppedImage && (
+                      <Button 
+                        onClick={() => setShowCropModal(true)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Crop className="h-4 w-4 mr-1" />
+                        Re-crop
                       </Button>
                     )}
                     <Button 
@@ -248,12 +341,9 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
                       alt="Beat artwork" 
                       className="w-full h-full object-cover"
                     />
-                  ) : previewUrl ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-fuchsia-500/20">
-                      <div className="text-center">
-                        <Crop className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground">Crop your image</p>
-                      </div>
+                  ) : imagePreview ? (
+                    <div className="w-full h-full">
+                      {imagePreview}
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
@@ -321,23 +411,7 @@ export function ArtworkUploadStep({ formData, onFormDataChange }: ArtworkUploadS
               </p>
               
               <div className="relative h-96 bg-black rounded-lg overflow-hidden">
-                <Cropper
-                  image={originalImageUrl}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  onCropChange={setCrop}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
-                  showGrid={true}
-                  style={{
-                    containerStyle: {
-                      width: "100%",
-                      height: "100%",
-                      position: "relative",
-                    },
-                  }}
-                />
+                {cropperComponent}
               </div>
               
               <div className="space-y-3">

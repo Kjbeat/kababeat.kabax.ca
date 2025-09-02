@@ -260,7 +260,7 @@ const BeatSchema = new Schema<IBeat>({
     },
     email: {
       type: String,
-      required: true,
+      required: false,
       trim: true
     },
     percent: {

@@ -12,28 +12,50 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface FileUploadStepProps {
   formData: BeatFormData;
-  onFileUpload: (type: 'audio' | 'artwork' | 'stems') => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: (type: 'audio' | 'artwork' | 'stems') => () => void;
-  onAiUpload: () => void;
+  onFormDataChange: (field: keyof BeatFormData, value: unknown) => void;
+  existingAudioUrl?: string; // URL of existing audio file for editing
+  existingStemsUrl?: string; // URL of existing stems file for editing
 }
 
-const MAX_AUDIO_SIZE = 200 * 1024 * 1024; // 200MB
-const MAX_STEMS_SIZE = 500 * 1024 * 1024; // 500MB for stems
+const MAX_AUDIO_SIZE = 5 * 1024 * 1024 * 1024; // 5GB - increased for large audio files
+const MAX_STEMS_SIZE = 5 * 1024 * 1024 * 1024; // 5GB for stems - increased for large ZIP files
 
-export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUpload }: FileUploadStepProps) {
+export function FileUploadStep({ formData, onFormDataChange, existingAudioUrl, existingStemsUrl }: FileUploadStepProps) {
   const { t } = useLanguage();
   const [audioDrag, setAudioDrag] = useState(false);
   const [stemsDrag, setStemsDrag] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [stemsError, setStemsError] = useState<string | null>(null);
+  const [existingAudio, setExistingAudio] = useState<string | null>(existingAudioUrl || null);
+  const [existingStems, setExistingStems] = useState<string | null>(existingStemsUrl || null);
   // Removed fake analysis progress animation
 
-  const triggerSynthetic = useCallback((type: 'audio' | 'artwork' | 'stems', file: File) => {
-    const syntheticEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
-    onFileUpload(type)(syntheticEvent);
-  }, [onFileUpload]);
+  useEffect(() => {
+    setExistingAudio(existingAudioUrl || null);
+    setExistingStems(existingStemsUrl || null);
+  }, [existingAudioUrl, existingStemsUrl]);
 
-  const handleDrop = useCallback((e: React.DragEvent, type: 'audio' | 'artwork' | 'stems') => {
+  const handleFileUpload = useCallback((type: 'audio' | 'stems', file: File) => {
+    if (type === 'audio') {
+      onFormDataChange('audioFile', file);
+      setExistingAudio(null); // Clear existing audio when new one is uploaded
+    } else if (type === 'stems') {
+      onFormDataChange('stemsFile', file);
+      setExistingStems(null); // Clear existing stems when new one is uploaded
+    }
+  }, [onFormDataChange]);
+
+  const handleRemoveFile = useCallback((type: 'audio' | 'stems') => {
+    if (type === 'audio') {
+      onFormDataChange('audioFile', null);
+      setExistingAudio(null);
+    } else if (type === 'stems') {
+      onFormDataChange('stemsFile', null);
+      setExistingStems(null);
+    }
+  }, [onFormDataChange]);
+
+  const handleDrop = useCallback((e: React.DragEvent, type: 'audio' | 'stems') => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -44,19 +66,19 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
       if (!/(mp3|wav)$/i.test(file.name)) { setAudioError(t('upload.fileUpload.unsupportedFormat')); return; }
       if (file.size > MAX_AUDIO_SIZE) { setAudioError(t('upload.fileUpload.fileTooLarge')); return; }
       setAudioError(null);
-      triggerSynthetic(type, file);
+      handleFileUpload(type, file);
     } else if (type === 'stems') {
       setStemsDrag(false);
       const file = e.dataTransfer.files?.[0];
       if (!file) return;
       if (!/\.zip$/i.test(file.name)) { setStemsError('Only ZIP files are allowed for stems'); return; }
-      if (file.size > MAX_STEMS_SIZE) { setStemsError('Stems file is too large (max 500MB)'); return; }
+      if (file.size > MAX_STEMS_SIZE) { setStemsError('Stems file is too large (max 5GB)'); return; }
       setStemsError(null);
-      triggerSynthetic(type, file);
+      handleFileUpload(type, file);
     }
-  }, [triggerSynthetic, t]);
+  }, [handleFileUpload, t]);
 
-  const dragEvents = (type: 'audio' | 'artwork' | 'stems') => ({
+  const dragEvents = (type: 'audio' | 'stems') => ({
     onDragOver: (e: React.DragEvent) => {
       e.preventDefault();
       if (type === 'audio') setAudioDrag(true);
@@ -91,22 +113,7 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
           </h3>
           <p className="text-sm text-muted-foreground">{t('upload.fileUpload.description')}</p>
         </div>
-        <Button
-          type="button"
-          onClick={onAiUpload}
-          aria-label="Open AI assisted upload"
-          className={cn(
-            "inline-flex items-center gap-2 rounded-lg h-11 px-4 text-sm font-medium",
-            "bg-gradient-to-r from-indigo-600 via-fuchsia-500 to-amber-400",
-            "text-white shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none",
-            "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-background",
-            "active:scale-[0.97] hover:scale-[1.02]"
-          )}
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>{t('upload.fileUpload.aiUpload')}</span>
-          <span className="text-[10px] uppercase tracking-wide ml-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white/90 border border-white/25">{t('upload.fileUpload.beta')}</span>
-        </Button>
+
       </div>
 
       <Separator />
@@ -154,10 +161,34 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onRemoveFile('audio')}
+                    onClick={() => handleRemoveFile('audio')}
                     className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors duration-200"
                   >
                     <X className="h-4 w-4 mr-1" /> {t('upload.fileUpload.remove')}
+                  </Button>
+                </div>
+              ) : existingAudio ? (
+                <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-blue-400/30 to-purple-400/30 blur-sm" />
+                      <FileAudio className="relative h-8 w-8 text-blue-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-blue-600 truncate max-w-[200px]">
+                        Current Audio File
+                      </p>
+                      <p className="text-xs text-muted-foreground">Existing beat audio</p>
+                    </div>
+                  </div>
+                 
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRemoveFile('audio')}
+                    className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors duration-200"
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove
                   </Button>
                 </div>
               ) : (
@@ -184,7 +215,7 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
                       id="audio-upload"
                       type="file"
                       accept=".mp3,.wav"
-                      onChange={(e) => { setAudioError(null); onFileUpload('audio')(e); }}
+                      onChange={(e) => { setAudioError(null); if (e.target.files?.[0]) handleFileUpload('audio', e.target.files[0]); }}
                       className="hidden"
                     />
                     <Label htmlFor="audio-upload" className="cursor-pointer">
@@ -251,7 +282,34 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onRemoveFile('stems')}
+                    onClick={() => handleRemoveFile('stems')}
+                    className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors duration-200"
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove
+                  </Button>
+                </div>
+              ) : existingStems ? (
+                <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-amber-400/30 to-orange-400/30 blur-sm" />
+                      <Archive className="relative h-8 w-8 text-amber-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-amber-600 truncate max-w-[200px]">
+                        Current Stems File
+                      </p>
+                      <p className="text-xs text-muted-foreground">Existing beat stems</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-600 flex items-center justify-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Stems available
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRemoveFile('stems')}
                     className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors duration-200"
                   >
                     <X className="h-4 w-4 mr-1" /> Remove
@@ -281,7 +339,7 @@ export function FileUploadStep({ formData, onFileUpload, onRemoveFile, onAiUploa
                       id="stems-upload"
                       type="file"
                       accept=".zip"
-                      onChange={(e) => { setStemsError(null); onFileUpload('stems')(e); }}
+                      onChange={(e) => { setStemsError(null); if (e.target.files?.[0]) handleFileUpload('stems', e.target.files[0]); }}
                       className="hidden"
                     />
                     <Label htmlFor="stems-upload" className="cursor-pointer">

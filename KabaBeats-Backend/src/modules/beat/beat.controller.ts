@@ -181,6 +181,81 @@ export class BeatController implements IBeatController {
     }
   }
 
+  async updateBeatWithFiles(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: { message: 'Authentication required' }
+        } as ApiResponse<null>);
+        return;
+      }
+
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'Beat ID is required' }
+        } as ApiResponse<null>);
+        return;
+      }
+
+      const audioFile = (req.files as any)?.['audio']?.[0] as Express.Multer.File;
+      const artworkFile = (req.files as any)?.['artwork']?.[0] as Express.Multer.File;
+      const stemsFile = (req.files as any)?.['stems']?.[0] as Express.Multer.File;
+
+      logger.info(`Updating beat ${id} with files for user: ${userId}`);
+      if (audioFile) logger.info(`Audio file: ${audioFile.originalname}, size: ${audioFile.size}`);
+      if (artworkFile) logger.info(`Artwork file: ${artworkFile.originalname}, size: ${artworkFile.size}`);
+      if (stemsFile) logger.info(`Stems file: ${stemsFile.originalname}, size: ${stemsFile.size}`);
+
+      // Parse FormData fields that are JSON strings
+      const updateData = { ...req.body };
+      
+      // Parse JSON string fields
+      if (updateData.tags && typeof updateData.tags === 'string') {
+        try {
+          updateData.tags = JSON.parse(updateData.tags);
+        } catch (error) {
+          logger.warn('Failed to parse tags JSON:', error);
+        }
+      }
+      
+      if (updateData.collaborators && typeof updateData.collaborators === 'string') {
+        try {
+          updateData.collaborators = JSON.parse(updateData.collaborators);
+          logger.info('Parsed collaborators:', updateData.collaborators);
+        } catch (error) {
+          logger.warn('Failed to parse collaborators JSON:', error);
+        }
+      }
+
+      // Parse numeric fields
+      if (updateData.bpm && typeof updateData.bpm === 'string') {
+        updateData.bpm = parseInt(updateData.bpm, 10);
+      }
+
+      // Parse boolean fields
+      if (updateData.allowFreeDownload && typeof updateData.allowFreeDownload === 'string') {
+        updateData.allowFreeDownload = updateData.allowFreeDownload === 'true';
+      }
+
+      logger.info('Parsed update data:', updateData);
+
+      const result = await beatService.updateBeatWithFiles(id, userId, updateData, audioFile, artworkFile, stemsFile);
+
+      res.status(200).json(result);
+    } catch (error) {
+      logger.error('Update beat with files controller error:', error);
+      const statusCode = error instanceof CustomError ? error.statusCode : 500;
+      res.status(statusCode).json({
+        success: false,
+        error: { message: error instanceof Error ? error.message : 'Internal server error' }
+      } as ApiResponse<null>);
+    }
+  }
+
   async deleteBeat(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.userId;

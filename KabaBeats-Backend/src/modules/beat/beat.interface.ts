@@ -97,6 +97,7 @@ export interface IBeatService {
   getBeats(queryParams: BeatQueryParams): Promise<BeatResponse>;
   getUserBeats(userId: string, queryParams: BeatQueryParams): Promise<BeatResponse>;
   updateBeat(beatId: string, userId: string, updateData: UpdateBeatRequest): Promise<BeatResponse>;
+  updateBeatWithFiles(beatId: string, userId: string, updateData: UpdateBeatRequest, audioFile?: Express.Multer.File, artworkFile?: Express.Multer.File, stemsFile?: Express.Multer.File): Promise<BeatResponse>;
   deleteBeat(beatId: string, userId: string): Promise<BeatResponse>;
   publishBeat(beatId: string, userId: string): Promise<BeatResponse>;
   unpublishBeat(beatId: string, userId: string): Promise<BeatResponse>;
@@ -115,6 +116,7 @@ export interface IBeatController {
   getBeats(req: Request, res: any): Promise<void>;
   getUserBeats(req: AuthenticatedRequest, res: any): Promise<void>;
   updateBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  updateBeatWithFiles(req: AuthenticatedRequest, res: any): Promise<void>;
   deleteBeat(req: AuthenticatedRequest, res: any): Promise<void>;
   publishBeat(req: AuthenticatedRequest, res: any): Promise<void>;
   unpublishBeat(req: AuthenticatedRequest, res: any): Promise<void>;

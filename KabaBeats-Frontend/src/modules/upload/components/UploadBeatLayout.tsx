@@ -488,9 +488,7 @@ export function UploadBeatLayout() {
         return (
           <FileUploadStep
             formData={formData}
-            onFileUpload={handleFileUpload}
-            onRemoveFile={handleRemoveFile}
-            onAiUpload={handleAiUpload}
+            onFormDataChange={handleFormDataChange}
           />
         );
       case 2:
@@ -525,6 +523,7 @@ export function UploadBeatLayout() {
             onSchedule={handleSchedule}
             termsAccepted={termsAccepted}
             onTermsChange={setTermsAccepted}
+            existingArtworkUrl={undefined} // No existing artwork for new uploads
           />
         );
       default:

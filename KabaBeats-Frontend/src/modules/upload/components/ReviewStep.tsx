@@ -15,10 +15,25 @@ interface ReviewStepProps {
   onSchedule: () => void;
   termsAccepted: boolean;
   onTermsChange: (value: boolean) => void;
+  existingArtworkUrl?: string; // For edit mode
 }
 
-export function ReviewStep({ formData, onPublish, onSaveDraft, onSchedule, termsAccepted, onTermsChange }: ReviewStepProps) {
+export function ReviewStep({ formData, onPublish, onSaveDraft, onSchedule, termsAccepted, onTermsChange, existingArtworkUrl }: ReviewStepProps) {
   const { t } = useLanguage();
+  
+
+  // Determine which artwork to display
+  const getArtworkUrl = () => {
+    if (formData.artwork && formData.artwork instanceof File) {
+      return URL.createObjectURL(formData.artwork);
+    }
+    if (existingArtworkUrl) {
+      return existingArtworkUrl;
+    }
+    return null;
+  };
+  
+  const artworkUrl = getArtworkUrl();
   
   return (
     <div className="space-y-6">
@@ -36,9 +51,9 @@ export function ReviewStep({ formData, onPublish, onSaveDraft, onSchedule, terms
             {/* Preview Card */}
             <div className="bg-gradient-card rounded-lg p-6">
               <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
-                {formData.artwork ? (
+                {artworkUrl ? (
                   <img 
-                    src={URL.createObjectURL(formData.artwork)} 
+                    src={artworkUrl} 
                     alt="Preview" 
                     className="w-full h-full object-cover rounded-lg"
                   />

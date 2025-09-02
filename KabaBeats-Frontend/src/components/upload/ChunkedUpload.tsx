@@ -35,8 +35,8 @@ interface UploadProgress {
   percentage: number;
 }
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB max
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks - increased for better performance
+const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB max - increased for large audio files
 
 export const ChunkedUpload: React.FC<ChunkedUploadProps> = ({
   onUploadComplete,
@@ -137,31 +137,45 @@ export const ChunkedUpload: React.FC<ChunkedUploadProps> = ({
 
     const urlData = await urlResponse.json();
 
-    // Upload chunk to R2
-    const uploadResponse = await fetch(urlData.data.uploadUrl, {
-      method: 'PUT',
-      body: chunk,
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
+    // Upload chunk to R2 with retry logic
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        const uploadResponse = await fetch(urlData.data.uploadUrl, {
+          method: 'PUT',
+          body: chunk,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
 
-    if (!uploadResponse.ok) {
-      throw new Error(`Failed to upload chunk ${chunkIndex}`);
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload chunk ${chunkIndex}: ${uploadResponse.statusText}`);
+        }
+
+        // Mark chunk as uploaded
+        await fetch('/api/v1/media/chunked/mark-uploaded', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+          body: JSON.stringify({
+            sessionId: session.sessionId,
+            chunkNumber: chunkIndex,
+          }),
+        });
+
+        return; // Success, exit retry loop
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          throw error;
+        }
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+      }
     }
-
-    // Mark chunk as uploaded
-    await fetch('/api/v1/media/chunked/mark-uploaded', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({
-        sessionId: session.sessionId,
-        chunkNumber: chunkIndex,
-      }),
-    });
   };
 
   const completeUpload = async (file: File, session: UploadSession): Promise<UploadResult> => {
@@ -217,17 +231,29 @@ export const ChunkedUpload: React.FC<ChunkedUploadProps> = ({
       setUploadSession(session);
       setUploadProgress({ uploaded: 0, total: session.totalChunks, percentage: 0 });
 
-      // Upload chunks
-      for (let i = 0; i < session.totalChunks; i++) {
-        await uploadChunk(currentFile, i, session);
+      // Upload chunks in parallel (max 3 concurrent uploads for better performance)
+      const CONCURRENT_UPLOADS = 3;
+      let completedChunks = 0;
+
+      for (let i = 0; i < session.totalChunks; i += CONCURRENT_UPLOADS) {
+        const batch = [];
+        for (let j = 0; j < CONCURRENT_UPLOADS && i + j < session.totalChunks; j++) {
+          const chunkIndex = i + j;
+          batch.push(
+            uploadChunk(currentFile, chunkIndex, session).then(() => {
+              completedChunks++;
+              const percentage = Math.round((completedChunks / session.totalChunks) * 100);
+              setUploadProgress({
+                uploaded: completedChunks,
+                total: session.totalChunks,
+                percentage,
+              });
+            })
+          );
+        }
         
-        // Update progress
-        const newProgress = {
-          uploaded: i + 1,
-          total: session.totalChunks,
-          percentage: Math.round(((i + 1) / session.totalChunks) * 100),
-        };
-        setUploadProgress(newProgress);
+        // Wait for current batch to complete before starting next batch
+        await Promise.all(batch);
       }
 
       // Complete upload

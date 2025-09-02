@@ -1,14 +1,16 @@
 export const mediaConfig = {
   // File size limits (in bytes)
   maxFileSize: {
-    audio: 200 * 1024 * 1024, // 200MB
+    audio: 5 * 1024 * 1024 * 1024, // 5GB - increased for very large audio files
     image: 10 * 1024 * 1024,  // 10MB
+    stems: 5 * 1024 * 1024 * 1024, // 5GB for stems (ZIP files)
   },
 
   // Allowed file types
   allowedTypes: {
     audio: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/m4a', 'audio/flac'],
     image: ['image/jpeg', 'image/png', 'image/webp'],
+    stems: ['application/zip', 'application/x-zip-compressed'],
   },
 
   // Chunk size for uploads (5MB)

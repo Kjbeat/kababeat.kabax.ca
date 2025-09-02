@@ -48,10 +48,10 @@ const uploadSessions = new Map<string, ChunkedUploadSession>();
 
 // Chunk size configuration
 export const CHUNK_CONFIG = {
-  DEFAULT_CHUNK_SIZE: 5 * 1024 * 1024, // 5MB per chunk
+  DEFAULT_CHUNK_SIZE: 10 * 1024 * 1024, // 10MB per chunk - increased for better performance
   MIN_CHUNK_SIZE: 1024 * 1024, // 1MB minimum
-  MAX_CHUNK_SIZE: 10 * 1024 * 1024, // 10MB maximum
-  MAX_FILE_SIZE: 500 * 1024 * 1024, // 500MB maximum
+  MAX_CHUNK_SIZE: 25 * 1024 * 1024, // 25MB maximum - increased for large files
+  MAX_FILE_SIZE: 5 * 1024 * 1024 * 1024, // 5GB maximum - increased for large audio files
   SESSION_EXPIRY: 24 * 60 * 60 * 1000, // 24 hours
 } as const;
 
