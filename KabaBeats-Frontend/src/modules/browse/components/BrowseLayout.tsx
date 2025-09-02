@@ -6,61 +6,51 @@ import { Grid, LayoutList } from "lucide-react";
 import { BrowseFilters } from "./BrowseFilters";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for demonstration (added createdAt + plays for sorting)
+// Beat interface matching backend
 interface Beat {
+  _id: string;
   id: string;
   title: string;
   producer: string;
-  artwork: string;
+  artwork?: string;
   bpm: number;
   key: string;
   genre: string;
-  price: number;
-  isLiked: boolean;
-  createdAt: string; // ISO date
-  plays: number; // popularity metric
+  mood?: string;
+  tags: string[];
+  basePrice: number;
+  salePrice?: number;
+  isExclusive: boolean;
+  allowFreeDownload: boolean;
+  duration?: number;
+  plays: number;
+  likes: number;
+  downloads: number;
+  sales: number;
+  uploadDate: string;
+  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  owner: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
+  hlsUrl?: string;
+  hlsProcessed: boolean;
 }
 
-// Base beats; more will be generated for infinite scroll demo
-const initialBeats: Beat[] = [
-  { id: "1", title: "Midnight Vibes", producer: "BeatMaker Pro", artwork: "", bpm: 140, key: "C Minor", genre: "Trap", price: 29.99, isLiked: false, createdAt: "2024-11-10T12:00:00Z", plays: 5400 },
-  { id: "2", title: "Summer Dreams", producer: "LoFi King", artwork: "", bpm: 85, key: "G Major", genre: "LoFi", price: 19.99, isLiked: true, createdAt: "2025-03-02T08:30:00Z", plays: 9100 },
-  { id: "3", title: "Electric Pulse", producer: "Synth Master", artwork: "", bpm: 128, key: "D Minor", genre: "EDM", price: 34.99, isLiked: false, createdAt: "2025-05-14T15:45:00Z", plays: 7800 },
-  { id: "4", title: "Urban Stories", producer: "Hip Hop Head", artwork: "", bpm: 95, key: "F# Minor", genre: "Hip Hop", price: 24.99, isLiked: false, createdAt: "2025-01-22T10:10:00Z", plays: 4200 },
-  { id: "5", title: "Cosmic Journey", producer: "Space Beats", artwork: "", bpm: 110, key: "A Major", genre: "Ambient", price: 39.99, isLiked: true, createdAt: "2025-06-30T09:15:00Z", plays: 12050 },
-  { id: "6", title: "Neon Nights", producer: "Retro Wave", artwork: "", bpm: 125, key: "E Minor", genre: "Synthwave", price: 27.99, isLiked: false, createdAt: "2025-04-18T19:05:00Z", plays: 6650 },
-  { id: "7", title: "Deep Focus", producer: "Study Beats", artwork: "", bpm: 70, key: "F Major", genre: "LoFi", price: 15.99, isLiked: false, createdAt: "2024-12-05T07:00:00Z", plays: 3000 },
-  { id: "8", title: "Bass Drop", producer: "EDM Master", artwork: "", bpm: 130, key: "G Minor", genre: "EDM", price: 32.99, isLiked: true, createdAt: "2025-02-12T22:20:00Z", plays: 8400 },
-];
-
-// Simple mock beat generator (could be moved to shared utils)
-function generateMoreBeats(offset: number, count: number): Beat[] {
-  const genres = ["Trap", "LoFi", "EDM", "Hip Hop", "Ambient", "Synthwave"];
-  const keys = ["C Minor", "G Major", "D Minor", "F# Minor", "A Major", "E Minor", "F Major", "G Minor"];
-  return Array.from({ length: count }).map((_, i) => {
-    const idNum = offset + i + 1;
-    return {
-      id: String(idNum + 8),
-      title: `Generated Beat #${idNum}`,
-      producer: `Producer ${((idNum % 7) + 1)}`,
-      artwork: "",
-      bpm: 70 + ((idNum * 7) % 200),
-      key: keys[idNum % keys.length],
-      genre: genres[idNum % genres.length],
-      price: 15 + ((idNum * 3) % 40) + 0.99,
-      isLiked: false,
-      createdAt: new Date(Date.now() - idNum * 86400000).toISOString(),
-      plays: 1000 + (idNum * 137) % 12000,
-    } as Beat;
-  });
-}
+// API base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 export function BrowseLayout() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [beats, setBeats] = useState<Beat[]>(() => initialBeats);
+  const [beats, setBeats] = useState<Beat[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
@@ -69,8 +59,52 @@ export function BrowseLayout() {
   const [bpmRange, setBpmRange] = useState([60, 180]);
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortBy, setSortBy] = useState("newest");
-  const [showFilters, setShowFilters] = useState(false); // closed by default
+  const [showFilters, setShowFilters] = useState(false);
   const { t } = useLanguage();
+  const { toast } = useToast();
+
+  // API functions
+  const fetchBeats = useCallback(async (page: number = 1, reset: boolean = false) => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        sortBy: sortBy,
+        status: 'published'
+      });
+
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedGenre !== "All") params.append('genre', selectedGenre);
+      if (selectedMood !== "All") params.append('mood', selectedMood);
+      if (selectedKey !== "All") params.append('key', selectedKey);
+      if (bpmRange[0] !== 60) params.append('minBPM', bpmRange[0].toString());
+      if (bpmRange[1] !== 180) params.append('maxBPM', bpmRange[1].toString());
+      if (priceRange[0] !== 0) params.append('minPrice', priceRange[0].toString());
+      if (priceRange[1] !== 100) params.append('maxPrice', priceRange[1].toString());
+
+      const response = await fetch(`${API_BASE_URL}/beats?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch beats');
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const newBeats = data.data || [];
+        setBeats(prev => reset ? newBeats : [...prev, ...newBeats]);
+        setCurrentPage(page);
+        setTotalPages(data.pagination?.pages || 1);
+        setHasMore(page < (data.pagination?.pages || 1));
+      } else {
+        throw new Error(data.error?.message || 'Failed to fetch beats');
+      }
+    } catch (error) {
+      console.error('Error fetching beats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load beats. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [searchQuery, selectedGenre, selectedMood, selectedKey, bpmRange, priceRange, sortBy, toast]);
 
   const activeFilters = [
     selectedGenre !== "All" && selectedGenre,
@@ -97,48 +131,25 @@ export function BrowseLayout() {
     setSearchQuery("");
   };
 
-  // Filter + sort memoized
-  const filteredBeats = useMemo(() => {
-    const filtered = beats.filter(beat => {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch = beat.title.toLowerCase().includes(q) || beat.producer.toLowerCase().includes(q);
-      const matchesGenre = selectedGenre === "All" || beat.genre === selectedGenre;
-      const matchesBPM = beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
-      const matchesPrice = beat.price >= priceRange[0] && beat.price <= priceRange[1];
-      const matchesKey = selectedKey === "All" || beat.key === selectedKey; // include key filter if used
-      return matchesSearch && matchesGenre && matchesBPM && matchesPrice && matchesKey;
-    });
+  // Load initial data
+  useEffect(() => {
+    setIsLoading(true);
+    fetchBeats(1, true).finally(() => setIsLoading(false));
+  }, [fetchBeats]);
 
-    const sorted = filtered.slice();
-    sorted.sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case "price-low":
-          return a.price - b.price;
-        case "price-high":
-          return b.price - a.price;
-        case "popular":
-          return b.plays - a.plays; // popularity by plays
-        default:
-          return 0;
-      }
-    });
-    return sorted;
-  }, [searchQuery, selectedGenre, selectedKey, bpmRange, priceRange, sortBy, beats]);
+  // Reset to first page when filters change
+  useEffect(() => {
+    if (!isLoading) {
+      fetchBeats(1, true);
+    }
+  }, [searchQuery, selectedGenre, selectedMood, selectedKey, bpmRange, priceRange, sortBy]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
-    // Simulate fetch delay
-    await new Promise(r => setTimeout(r, 900));
-    const more = generateMoreBeats(beats.length - initialBeats.length, 16);
-    setBeats(prev => [...prev, ...more]);
-    if (beats.length >= 160) setHasMore(false); // cap demo
+    await fetchBeats(currentPage + 1, false);
     setIsLoadingMore(false);
-  }, [isLoadingMore, hasMore, beats.length]);
+  }, [isLoadingMore, hasMore, currentPage, fetchBeats]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -156,15 +167,16 @@ export function BrowseLayout() {
 
   const handlePlay = (beat: Beat) => {
     playBeat({
-      id: beat.id,
+      id: beat._id || beat.id,
       title: beat.title,
       producer: beat.producer,
       artwork: beat.artwork,
       bpm: beat.bpm,
       key: beat.key,
       genre: beat.genre,
-      price: beat.price,
-      isLiked: beat.isLiked,
+      price: beat.salePrice || beat.basePrice,
+      isLiked: false, // TODO: Implement like functionality
+      hlsUrl: beat.hlsUrl,
     });
   };
 
@@ -203,9 +215,7 @@ export function BrowseLayout() {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            {t('browse.showingResults')
-              .replace('{count}', filteredBeats.length.toString())
-              .replace('{total}', beats.length.toString())}
+            {isLoading ? 'Loading...' : `${beats.length} beats found`}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -225,51 +235,65 @@ export function BrowseLayout() {
           </div>
         </div>
 
-        {/* Beats Grid */}
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredBeats.map((beat, index) => (
-              <div
-                key={beat.id}
-                className="anim-new-beat-pop"
-                style={{ animationDelay: `${(index % 20) * 40}ms` }}
-              >
-                <BeatCard
-                  id={beat.id}
-                  title={beat.title}
-                  producer={beat.producer}
-                  artwork={beat.artwork}
-                  bpm={beat.bpm}
-                  musicalKey={beat.key}
-                  genre={beat.genre}
-                  price={beat.price}
-                  onPlay={() => handlePlay(beat)}
-                />
-              </div>
-            ))}
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading beats...</p>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {filteredBeats.map((beat, index) => (
-              <div
-                key={beat.id}
-                className="anim-new-beat-pop"
-                style={{ animationDelay: `${(index % 20) * 40}ms` }}
-              >
-                <BeatListItem
-                  id={beat.id}
-                  title={beat.title}
-                  producer={beat.producer}
-                  artwork={beat.artwork}
-                  bpm={beat.bpm}
-                  musicalKey={beat.key}
-                  genre={beat.genre}
-                  price={beat.price}
-                  onPlay={() => handlePlay(beat)}
-                />
+          <>
+            {/* Beats Grid */}
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {beats.map((beat, index) => (
+                  <div
+                    key={beat._id || beat.id}
+                    className="anim-new-beat-pop"
+                    style={{ animationDelay: `${(index % 20) * 40}ms` }}
+                  >
+                    <BeatCard
+                      id={beat._id || beat.id}
+                      title={beat.title}
+                      producer={beat.producer}
+                      artwork={beat.artwork}
+                      bpm={beat.bpm}
+                      musicalKey={beat.key}
+                      genre={beat.genre}
+                      price={beat.salePrice || beat.basePrice}
+                      exclusive={beat.isExclusive}
+                      onPlay={() => handlePlay(beat)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {beats.map((beat, index) => (
+                  <div
+                    key={beat._id || beat.id}
+                    className="anim-new-beat-pop"
+                    style={{ animationDelay: `${(index % 20) * 40}ms` }}
+                  >
+                    <BeatListItem
+                      id={beat._id || beat.id}
+                      title={beat.title}
+                      producer={beat.producer}
+                      artwork={beat.artwork}
+                      bpm={beat.bpm}
+                      musicalKey={beat.key}
+                      genre={beat.genre}
+                      price={beat.salePrice || beat.basePrice}
+                      exclusive={beat.isExclusive}
+                      onPlay={() => handlePlay(beat)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
         {/* Sentinel for infinite scroll */}
         <div ref={sentinelRef} className="h-6 w-full" />
@@ -281,7 +305,7 @@ export function BrowseLayout() {
           <div className="text-center py-8 text-muted-foreground text-sm">{t('browse.endOfList')}</div>
         )}
 
-        {filteredBeats.length === 0 && (
+        {!isLoading && beats.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">{t('browse.noBeatsFound')}</p>
             <Button variant="outline" onClick={clearAllFilters} className="mt-4">

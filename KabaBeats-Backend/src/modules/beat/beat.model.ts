@@ -1,275 +1,374 @@
-import mongoose, { Schema } from 'mongoose';
-import { IBeat } from '@/types';
+import mongoose, { Document, Schema } from 'mongoose';
+import { IUser } from '@/types';
 
-const beatSchema = new Schema<IBeat>({
+export interface IBeat extends Document {
+  title: string;
+  producer: string;
+  description?: string;
+  artwork?: string;
+  audioFile?: string;
+  bpm: number;
+  key: string;
+  genre: string;
+  mood?: string;
+  tags: string[];
+  
+  // Licensing
+  allowFreeDownload: boolean;
+  
+  // Audio processing
+  duration?: number;
+  fileSize?: number;
+  audioFormat: 'mp3' | 'wav' | 'm4a';
+  sampleRate?: number;
+  bitrate?: number;
+  
+  // HLS streaming
+  hlsUrl?: string;
+  hlsProcessed: boolean;
+  hlsSegments?: {
+    high?: string;
+    medium?: string;
+    low?: string;
+  };
+  
+  // File storage
+  storageKey?: string;
+  originalFileName?: string;
+  
+  // Stems storage
+  stemsStorageKey?: string;
+  stemsOriginalFileName?: string;
+  stemsFileSize?: number;
+  
+  // Metadata
+  uploadDate: Date;
+  lastModified: Date;
+  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  scheduledDate?: Date;
+  
+  // Analytics
+  plays: number;
+  likes: number;
+  downloads: number;
+  sales: number;
+  
+  // Collaborators
+  collaborators: {
+    userId: mongoose.Types.ObjectId;
+    name: string;
+    email: string;
+    percent: number;
+    role?: string;
+  }[];
+  
+  // Owner
+  owner: mongoose.Types.ObjectId;
+  
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const BeatSchema = new Schema<IBeat>({
   title: {
     type: String,
-    required: [true, 'Title is required'],
+    required: true,
     trim: true,
-    maxlength: [100, 'Title cannot exceed 100 characters'],
+    maxlength: 100
+  },
+  producer: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 50
   },
   description: {
     type: String,
     trim: true,
-    maxlength: [1000, 'Description cannot exceed 1000 characters'],
-  },
-  producer: {
-    type: String,
-    required: [true, 'Producer name is required'],
-    trim: true,
-    maxlength: [50, 'Producer name cannot exceed 50 characters'],
-  },
-  producerId: {
-    type: String,
-    required: [true, 'Producer ID is required'],
-    ref: 'User',
+    maxlength: 500
   },
   artwork: {
     type: String,
-    default: null,
+    trim: true
   },
   audioFile: {
     type: String,
-    required: [true, 'Audio file is required'],
+    trim: true
   },
   bpm: {
     type: Number,
-    required: [true, 'BPM is required'],
-    min: [60, 'BPM must be at least 60'],
-    max: [300, 'BPM cannot exceed 300'],
+    required: true,
+    min: 60,
+    max: 300
   },
-  musicalKey: {
+  key: {
     type: String,
-    required: [true, 'Musical key is required'],
+    required: true,
     enum: [
       'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-      'C Major', 'C# Major', 'D Major', 'D# Major', 'E Major', 'F Major', 
-      'F# Major', 'G Major', 'G# Major', 'A Major', 'A# Major', 'B Major',
       'C Minor', 'C# Minor', 'D Minor', 'D# Minor', 'E Minor', 'F Minor', 
-      'F# Minor', 'G Minor', 'G# Minor', 'A Minor', 'A# Minor', 'B Minor'
-    ],
+      'F# Minor', 'G Minor', 'G# Minor', 'A Minor', 'A# Minor', 'B Minor',
+      'C Major', 'C# Major', 'D Major', 'D# Major', 'E Major', 'F Major', 
+      'F# Major', 'G Major', 'G# Major', 'A Major', 'A# Major', 'B Major'
+    ]
   },
   genre: {
     type: String,
-    required: [true, 'Genre is required'],
+    required: true,
     enum: [
       'Hip Hop', 'Trap', 'R&B', 'Pop', 'LoFi', 'EDM', 'Drill', 'Afrobeat', 
-      'Jazz', 'Ambient', 'Rock', 'Country', 'Classical', 'Reggae', 'Blues',
-      'Electronic', 'House', 'Techno', 'Dubstep', 'Future Bass', 'Synthwave'
-    ],
+      'Jazz', 'Ambient', 'Rock', 'Country', 'Classical', 'Reggae', 'Blues'
+    ]
+  },
+  mood: {
+    type: String,
+    enum: [
+      'Chill', 'Energetic', 'Dark', 'Happy', 'Sad', 'Aggressive', 
+      'Romantic', 'Mysterious', 'Upbeat', 'Melancholic', 'Intense', 'Peaceful'
+    ]
   },
   tags: [{
     type: String,
     trim: true,
-    maxlength: [30, 'Tag cannot exceed 30 characters'],
+    maxlength: 20
   }],
-  price: {
+  
+  // Licensing
+  allowFreeDownload: {
+    type: Boolean,
+    default: false
+  },
+  
+  // Audio processing
+  duration: {
     type: Number,
-    required: [true, 'Price is required'],
-    min: [0, 'Price cannot be negative'],
-    max: [10000, 'Price cannot exceed $10,000'],
+    min: 0
   },
-  salePrice: {
+  fileSize: {
     type: Number,
-    min: [0, 'Sale price cannot be negative'],
-    max: [10000, 'Sale price cannot exceed $10,000'],
-    validate: {
-      validator: function(this: IBeat, value: number) {
-        return !value || value < this.price;
-      },
-      message: 'Sale price must be less than regular price'
-    }
+    min: 0
   },
-  isExclusive: {
+  audioFormat: {
+    type: String,
+    enum: ['mp3', 'wav', 'm4a'],
+    default: 'mp3'
+  },
+  sampleRate: {
+    type: Number,
+    min: 0
+  },
+  bitrate: {
+    type: Number,
+    min: 0
+  },
+  
+  // HLS streaming
+  hlsUrl: {
+    type: String,
+    trim: true
+  },
+  hlsProcessed: {
     type: Boolean,
-    default: false,
+    default: false
   },
-  isPublished: {
-    type: Boolean,
-    default: false,
+  hlsSegments: {
+    high: String,
+    medium: String,
+    low: String
   },
-  isDraft: {
-    type: Boolean,
-    default: true,
+  
+  // File storage
+  storageKey: {
+    type: String,
+    required: false,
+    trim: true
   },
-  licenseTypes: {
-    free: {
-      type: Boolean,
-      default: true,
-    },
-    mp3: {
-      type: Boolean,
-      default: true,
-    },
-    wav: {
-      type: Boolean,
-      default: false,
-    },
-    stems: {
-      type: Boolean,
-      default: false,
-    },
-    exclusive: {
-      type: Boolean,
-      default: false,
-    },
+  originalFileName: {
+    type: String,
+    required: false,
+    trim: true
   },
-  stats: {
-    plays: {
-      type: Number,
-      default: 0,
-      min: [0, 'Plays cannot be negative'],
-    },
-    likes: {
-      type: Number,
-      default: 0,
-      min: [0, 'Likes cannot be negative'],
-    },
-    downloads: {
-      type: Number,
-      default: 0,
-      min: [0, 'Downloads cannot be negative'],
-    },
-    shares: {
-      type: Number,
-      default: 0,
-      min: [0, 'Shares cannot be negative'],
-    },
+  
+  // Stems storage
+  stemsStorageKey: {
+    type: String,
+    required: false,
+    trim: true
   },
-  metadata: {
-    duration: {
-      type: Number,
-      required: [true, 'Duration is required'],
-      min: [1, 'Duration must be at least 1 second'],
+  stemsOriginalFileName: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  stemsFileSize: {
+    type: Number,
+    required: false,
+    min: 0
+  },
+  
+  // Metadata
+  uploadDate: {
+    type: Date,
+    default: Date.now
+  },
+  lastModified: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'scheduled', 'archived'],
+    default: 'draft'
+  },
+  scheduledDate: {
+    type: Date
+  },
+  
+  // Analytics
+  plays: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  likes: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  downloads: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  sales: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  
+  // Collaborators
+  collaborators: [{
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     },
-    fileSize: {
-      type: Number,
-      required: [true, 'File size is required'],
-      min: [1, 'File size must be at least 1 byte'],
-    },
-    format: {
+    name: {
       type: String,
-      required: [true, 'Format is required'],
-      enum: ['mp3', 'wav', 'm4a', 'flac'],
+      required: true,
+      trim: true
     },
-    sampleRate: {
+    email: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    percent: {
       type: Number,
-      required: [true, 'Sample rate is required'],
-      enum: [44100, 48000, 96000],
+      required: true,
+      min: 0,
+      max: 100
     },
-    bitRate: {
-      type: Number,
-      required: [true, 'Bit rate is required'],
-      min: [128, 'Bit rate must be at least 128 kbps'],
-    },
-  },
-}, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true },
-});
-
-// Indexes for better performance
-beatSchema.index({ producerId: 1 });
-beatSchema.index({ genre: 1 });
-beatSchema.index({ bpm: 1 });
-beatSchema.index({ musicalKey: 1 });
-beatSchema.index({ price: 1 });
-beatSchema.index({ isPublished: 1 });
-beatSchema.index({ isExclusive: 1 });
-beatSchema.index({ tags: 1 });
-beatSchema.index({ createdAt: -1 });
-beatSchema.index({ 'stats.plays': -1 });
-beatSchema.index({ 'stats.likes': -1 });
-
-// Text index for search
-beatSchema.index({
-  title: 'text',
-  description: 'text',
-  producer: 'text',
-  tags: 'text',
-  genre: 'text'
-});
-
-// Virtual for current price (sale price if available, otherwise regular price)
-beatSchema.virtual('currentPrice').get(function() {
-  return this.salePrice && this.salePrice < this.price ? this.salePrice : this.price;
-});
-
-// Virtual for discount percentage
-beatSchema.virtual('discountPercentage').get(function() {
-  if (this.salePrice && this.salePrice < this.price) {
-    return Math.round(((this.price - this.salePrice) / this.price) * 100);
+    role: {
+      type: String,
+      trim: true
+    }
+  }],
+  
+  // Owner
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   }
+}, {
+  timestamps: true
+});
+
+// Indexes for better query performance
+BeatSchema.index({ title: 'text', description: 'text', tags: 'text' });
+BeatSchema.index({ genre: 1, mood: 1 });
+BeatSchema.index({ bpm: 1, key: 1 });
+BeatSchema.index({ status: 1, uploadDate: -1 });
+BeatSchema.index({ owner: 1, status: 1 });
+BeatSchema.index({ plays: -1 });
+BeatSchema.index({ likes: -1 });
+BeatSchema.index({ sales: -1 });
+
+// Virtual for current price (will be calculated from user license settings)
+BeatSchema.virtual('currentPrice').get(function() {
+  // This will be populated from user license settings when needed
   return 0;
 });
 
-// Virtual for formatted duration
-beatSchema.virtual('formattedDuration').get(function() {
-  const minutes = Math.floor(this.metadata.duration / 60);
-  const seconds = this.metadata.duration % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+// Virtual for total collaborator percentage
+BeatSchema.virtual('totalCollaboratorPercent').get(function() {
+  return this.collaborators.reduce((total, collab) => total + collab.percent, 0);
 });
 
-// Virtual for formatted file size
-beatSchema.virtual('formattedFileSize').get(function() {
-  const bytes = this.metadata.fileSize;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  if (bytes === 0) return '0 Bytes';
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+// Virtual for owner percentage
+BeatSchema.virtual('ownerPercent').get(function() {
+  const totalCollaboratorPercent = this.collaborators.reduce((total, collab) => total + collab.percent, 0);
+  return Math.max(0, 100 - totalCollaboratorPercent);
 });
 
-// Pre-save middleware
-beatSchema.pre('save', function(next) {
-  // Ensure draft and published are mutually exclusive
-  if (this.isPublished && this.isDraft) {
-    this.isDraft = false;
-  }
-  
-  // If exclusive, remove from other license types
-  if (this.isExclusive) {
-    this.licenseTypes.free = false;
-    this.licenseTypes.mp3 = false;
-    this.licenseTypes.wav = false;
-    this.licenseTypes.stems = false;
-    this.licenseTypes.exclusive = true;
-  }
-  
+// Pre-save middleware to update lastModified
+BeatSchema.pre('save', function(next) {
+  this.lastModified = new Date();
   next();
 });
 
-// Instance methods
-beatSchema.methods.incrementPlays = function() {
-  this.stats.plays += 1;
+// Method to increment plays
+BeatSchema.methods.incrementPlays = function() {
+  this.plays += 1;
   return this.save();
 };
 
-beatSchema.methods.incrementLikes = function() {
-  this.stats.likes += 1;
+// Method to increment likes
+BeatSchema.methods.incrementLikes = function() {
+  this.likes += 1;
   return this.save();
 };
 
-beatSchema.methods.incrementDownloads = function() {
-  this.stats.downloads += 1;
+// Method to increment downloads
+BeatSchema.methods.incrementDownloads = function() {
+  this.downloads += 1;
   return this.save();
 };
 
-beatSchema.methods.incrementShares = function() {
-  this.stats.shares += 1;
+// Method to increment sales
+BeatSchema.methods.incrementSales = function() {
+  this.sales += 1;
   return this.save();
 };
 
-beatSchema.methods.publish = function() {
-  this.isPublished = true;
-  this.isDraft = false;
-  return this.save();
+// Static method to find beats by genre
+BeatSchema.statics.findByGenre = function(genre: string) {
+  return this.find({ genre, status: 'published' });
 };
 
-beatSchema.methods.unpublish = function() {
-  this.isPublished = false;
-  this.isDraft = true;
-  return this.save();
+// Static method to find beats by mood
+BeatSchema.statics.findByMood = function(mood: string) {
+  return this.find({ mood, status: 'published' });
 };
 
-export const Beat = mongoose.model<IBeat>('Beat', beatSchema);
+// Static method to find beats by BPM range
+BeatSchema.statics.findByBPMRange = function(minBPM: number, maxBPM: number) {
+  return this.find({ 
+    bpm: { $gte: minBPM, $lte: maxBPM }, 
+    status: 'published' 
+  });
+};
+
+// Static method to find beats by price range
+BeatSchema.statics.findByPriceRange = function(minPrice: number, maxPrice: number) {
+  return this.find({ 
+    $or: [
+      { basePrice: { $gte: minPrice, $lte: maxPrice } },
+      { salePrice: { $gte: minPrice, $lte: maxPrice } }
+    ],
+    status: 'published' 
+  });
+};
+
+export const Beat = mongoose.model<IBeat>('Beat', BeatSchema);

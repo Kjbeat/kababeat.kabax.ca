@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { LanguageToggle } from "@/components/LanguageToggle"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
 
 const dashboardItems = [
   { title: "overview", url: "/dashboard", icon: BarChart3 },
@@ -48,6 +49,7 @@ export function DashboardSidebar() {
   const { theme, setTheme } = useTheme();
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
@@ -92,13 +94,23 @@ export function DashboardSidebar() {
       <div className="p-4 border-b border-border">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder.svg" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.username} />
+            <AvatarFallback>
+              {user?.firstName && user?.lastName 
+                ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                : user?.username?.charAt(0).toUpperCase() || 'U'
+              }
+            </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">@johndoe</p>
+              <p className="text-sm font-medium text-foreground truncate">
+                {user?.firstName && user?.lastName 
+                  ? `${user.firstName} ${user.lastName}`
+                  : user?.username || 'User'
+                }
+              </p>
+              <p className="text-xs text-muted-foreground truncate">@{user?.username || 'username'}</p>
             </div>
           )}
         </div>

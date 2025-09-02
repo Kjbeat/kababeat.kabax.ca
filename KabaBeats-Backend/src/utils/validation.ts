@@ -7,16 +7,54 @@ import { CustomError } from './errorHandler';
  */
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req.body);
+    // Preprocess req.body to handle FormData JSON strings
+    const processedBody = { ...req.body };
+    
+    // Convert JSON strings to objects/arrays for specific fields
+    if (processedBody.tags && typeof processedBody.tags === 'string') {
+      try {
+        processedBody.tags = JSON.parse(processedBody.tags);
+      } catch (e) {
+        // If parsing fails, keep as string - validation will catch it
+      }
+    }
+    
+    // Convert string numbers to numbers
+    if (processedBody.bpm && typeof processedBody.bpm === 'string') {
+      processedBody.bpm = parseInt(processedBody.bpm);
+    }
+    if (processedBody.basePrice && typeof processedBody.basePrice === 'string') {
+      processedBody.basePrice = parseFloat(processedBody.basePrice);
+    }
+    if (processedBody.salePrice && typeof processedBody.salePrice === 'string') {
+      processedBody.salePrice = parseFloat(processedBody.salePrice);
+    }
+    
+    // Convert string booleans to booleans
+    if (processedBody.isExclusive && typeof processedBody.isExclusive === 'string') {
+      processedBody.isExclusive = processedBody.isExclusive === 'true';
+    }
+    if (processedBody.allowFreeDownload && typeof processedBody.allowFreeDownload === 'string') {
+      processedBody.allowFreeDownload = processedBody.allowFreeDownload === 'true';
+    }
+    
+    const { error } = schema.validate(processedBody);
     
     if (error) {
       const message = error.details.map(detail => detail.message).join(', ');
       throw new CustomError(message, 400);
     }
     
+    // Update req.body with processed data
+    req.body = processedBody;
     next();
   };
 };
+
+/**
+ * Alias for backward compatibility
+ */
+export const validateRequest = validate;
 
 /**
  * Validation middleware for query parameters

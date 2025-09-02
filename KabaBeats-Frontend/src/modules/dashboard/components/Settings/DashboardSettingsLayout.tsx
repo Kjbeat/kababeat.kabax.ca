@@ -21,10 +21,10 @@ export function DashboardSettingsLayout() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('settings.title')}</h1>
           <p className="text-sm sm:text-base text-muted-foreground">{t('settings.subtitle')}</p>
         </div>
-        <Button className="w-full sm:w-auto text-sm">
+        {/* <Button className="w-full sm:w-auto text-sm">
           <Save className="h-4 w-4 mr-2" />
           {t('settings.saveAllChanges')}
-        </Button>
+        </Button> */}
       </div>
 
       <Tabs defaultValue="profile" className="w-full">

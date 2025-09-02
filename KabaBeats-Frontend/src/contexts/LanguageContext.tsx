@@ -1135,6 +1135,7 @@ const translations = {
     'upload.fileUpload.fileTooLarge': 'File exceeds 200MB limit.',
     'upload.fileUpload.analyzingWaveform': 'Analyzing waveform & metadata…',
     'upload.fileUpload.analysisComplete': '✅ Analysis complete',
+    'upload.fileUpload.readyToUpload': '✅ Ready to upload',
     'upload.fileUpload.remove': 'Remove',
     
     // Artwork Upload Step

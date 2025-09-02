@@ -8,8 +8,46 @@ import { IUser } from '@/types';
 import { emailService } from '@/utils/emailService';
 import { generateOTP, generateOTPExpiration, isOTPExpired } from '@/utils/otpGenerator';
 import { generatePasswordResetToken, generatePasswordResetExpiration, isPasswordResetTokenExpired } from '@/utils/passwordResetToken';
+import { userLicenseSettingsService } from '@/modules/user/userLicenseSettings.service';
 
 export class AuthService implements IAuthService {
+  /**
+   * Generate a unique username from email
+   */
+  private async generateUsernameFromEmail(email: string): Promise<string> {
+    // Extract the part before @ and clean it up
+    const emailParts = email.split('@');
+    if (!emailParts[0]) {
+      throw new Error('Invalid email format');
+    }
+    
+    let baseUsername = emailParts[0]
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9_]/g, '') // Remove special characters except underscore
+      .substring(0, 20); // Limit length
+    
+    // Ensure minimum length
+    if (baseUsername.length < 3) {
+      baseUsername = baseUsername + 'user';
+    }
+    
+    // Check if username is available
+    let username = baseUsername;
+    let counter = 1;
+    
+    while (await User.findOne({ username })) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+      
+      // Prevent infinite loop
+      if (counter > 999) {
+        username = `${baseUsername}${Date.now()}`;
+        break;
+      }
+    }
+    
+    return username;
+  }
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       console.log('AuthService: Received registration data:', {
@@ -58,6 +96,15 @@ export class AuthService implements IAuthService {
       await user.save();
       
       console.log('AuthService: User created successfully with ID:', user._id);
+
+      // Create default license settings for the new user
+      try {
+        await userLicenseSettingsService.createDefaultUserLicenseSettings(user._id.toString());
+        logger.info(`Default license settings created for user: ${user.email}`);
+      } catch (licenseError) {
+        logger.error('Failed to create default license settings:', licenseError);
+        // Don't throw error here - user is created, license settings can be created later
+      }
 
       // Send verification email
       try {
@@ -242,10 +289,13 @@ export class AuthService implements IAuthService {
       let user = await User.findOne({ email: googleUser.email });
 
       if (!user) {
+        // Generate username from email (prioritize email-based username)
+        const username = await this.generateUsernameFromEmail(googleUser.email);
+        
         // Create new user
         user = new User({
           email: googleUser.email,
-          username: oauthData?.username || googleUser.email.split('@')[0], // Use provided username or email prefix
+          username: username, // Always use email-based username
           firstName: googleUser.given_name,
           lastName: googleUser.family_name,
           avatar: googleUser.picture,
@@ -267,7 +317,16 @@ export class AuthService implements IAuthService {
         });
 
         await user.save();
-        logger.info(`New Google user registered via callback: ${user.email}`);
+        logger.info(`New Google user registered via callback: ${user.email} with username: ${user.username}`);
+
+        // Create default license settings for the new Google user
+        try {
+          await userLicenseSettingsService.createDefaultUserLicenseSettings(user._id.toString());
+          logger.info(`Default license settings created for Google user: ${user.email}`);
+        } catch (licenseError) {
+          logger.error('Failed to create default license settings for Google user:', licenseError);
+          // Don't throw error here - user is created, license settings can be created later
+        }
       } else {
         // Update existing user with Google info if needed
         user.lastLogin = new Date();

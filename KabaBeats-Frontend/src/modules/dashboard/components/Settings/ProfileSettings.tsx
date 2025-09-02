@@ -33,23 +33,40 @@ export function ProfileSettings() {
     youtube: "",
   });
 
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load profile data on component mount
+  // Extract handles from full URLs
+  const extractHandle = useCallback((url: string, platform: string) => {
+    if (!url) return "";
+    
+    try {
+      if (platform === 'website') {
+        // Remove protocol and www
+        return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+      }
+      if (platform === 'instagram') {
+        // Handle various Instagram URL formats
+        return url.replace(/^https?:\/\/(www\.)?instagram\.com\/?/, '').replace(/\/$/, '');
+      }
+      if (platform === 'twitter') {
+        // Handle both twitter.com and x.com
+        return url.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//, '').replace(/\/$/, '');
+      }
+      if (platform === 'youtube') {
+        // Handle various YouTube URL formats
+        return url.replace(/^https?:\/\/(www\.)?youtube\.com\/(@|channel\/|c\/|user\/)/, '').replace(/\/$/, '');
+      }
+      return url;
+    } catch (error) {
+      console.error(`Error extracting handle for ${platform}:`, error);
+      return url;
+    }
+  }, []);
+
+  // Load profile data on component mount and when user data changes
   useEffect(() => {
     if (user) {
-      // Extract handles from full URLs
-      const extractHandle = (url: string, platform: string) => {
-        if (!url) return "";
-        if (platform === 'website') return url.replace(/^https?:\/\//, '');
-        if (platform === 'instagram') return url.replace(/^https?:\/\/(www\.)?instagram\.com\//, '');
-        if (platform === 'twitter') return url.replace(/^https?:\/\/(www\.)?twitter\.com\//, '');
-        if (platform === 'youtube') return url.replace(/^https?:\/\/(www\.)?youtube\.com\/@/, '');
-        return url;
-      };
-
-      setProfileData({
+      const extractedData = {
         username: user.username || "",
         firstName: user.firstName || "",
         lastName: user.lastName || "",
@@ -59,9 +76,11 @@ export function ProfileSettings() {
         instagram: extractHandle(user.socialLinks?.instagram || "", 'instagram'),
         twitter: extractHandle(user.socialLinks?.twitter || "", 'twitter'),
         youtube: extractHandle(user.socialLinks?.youtube || "", 'youtube'),
-      });
+      };
+
+      setProfileData(extractedData);
     }
-  }, [user]);
+  }, [user, extractHandle]);
 
   // Save profile data
   const handleSaveProfile = async () => {
@@ -76,6 +95,8 @@ export function ProfileSettings() {
         twitter: profileData.twitter ? `https://twitter.com/${profileData.twitter}` : '',
         youtube: profileData.youtube ? `https://youtube.com/@${profileData.youtube}` : '',
       };
+
+
 
       const updateData = {
         username: profileData.username,
@@ -139,6 +160,8 @@ export function ProfileSettings() {
     // TODO: Implement actual cropping and upload logic
     setOpen(false);
   };
+
+
 
   return (
     <>
@@ -236,6 +259,9 @@ export function ProfileSettings() {
         {/* Social Links */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">{t('profile.socialLinks')}</h3>
+          
+
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="website">{t('profile.website')}</Label>
@@ -251,6 +277,7 @@ export function ProfileSettings() {
                   className="rounded-l-none"
                 />
               </div>
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="instagram">{t('profile.instagram')}</Label>
@@ -266,6 +293,7 @@ export function ProfileSettings() {
                   className="rounded-l-none"
                 />
               </div>
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="twitter">{t('profile.twitter')}</Label>
@@ -281,6 +309,7 @@ export function ProfileSettings() {
                   className="rounded-l-none"
                 />
               </div>
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="youtube">{t('profile.youtube')}</Label>
@@ -296,6 +325,7 @@ export function ProfileSettings() {
                   className="rounded-l-none"
                 />
               </div>
+
             </div>
           </div>
         </div>

@@ -195,20 +195,22 @@ export function BeatInfoStep({ formData, onFormDataChange, onAddTag, onRemoveTag
           </div>
 
           {/* Free Download Toggle */}
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label htmlFor="freeDownload" className="text-base font-medium">
-                {t('upload.beatInfo.allowFreeDownload')}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t('upload.beatInfo.freeDownloadDescription')}
-              </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-1">
+                <Label htmlFor="freeDownload" className="text-base font-medium">
+                  {t('upload.beatInfo.allowFreeDownload')}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('upload.beatInfo.freeDownloadDescription')}
+                </p>
+              </div>
+              <Switch
+                id="freeDownload"
+                checked={formData.allowFreeDownload}
+                onCheckedChange={(checked) => onFormDataChange("allowFreeDownload", checked)}
+              />
             </div>
-            <Switch
-              id="freeDownload"
-              checked={formData.allowFreeDownload}
-              onCheckedChange={(checked) => onFormDataChange("allowFreeDownload", checked)}
-            />
           </div>
         </CardContent>
       </Card>

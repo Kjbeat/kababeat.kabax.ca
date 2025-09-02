@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -31,6 +31,9 @@ import {
   Settings,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 const licenseTypes = [
   {
@@ -78,6 +81,9 @@ const licenseTypes = [
 export default function DashboardLicenses() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const { t } = useLanguage()
+  const { accessToken } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [updatingLicense, setUpdatingLicense] = useState<string | null>(null)
   
   // Contract HTML preview component
   const LicenseContractPreview = ({ license, config }) => {
@@ -211,15 +217,148 @@ export default function DashboardLicenses() {
 
   const currentSettings = licenseSettings[selectedLicense as keyof typeof licenseSettings]
 
-  const updateLicenseSetting = (key: string, value: any) => {
-    setLicenseSettings(prev => ({
-      ...prev,
-      [selectedLicense]: {
-        ...prev[selectedLicense as keyof typeof prev],
-        [key]: value,
-      },
-    }))
-  }
+  // Fetch user license settings from API
+  const fetchLicenseSettings = useCallback(async () => {
+    if (!accessToken) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/user-license-settings`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch license settings');
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setLicenseSettings(data.data);
+        setLicenseEnabled({
+          mp3: data.data.mp3?.enabled ?? true,
+          wav: data.data.wav?.enabled ?? true,
+          trackout: data.data.trackout?.enabled ?? true,
+          unlimited: data.data.unlimited?.enabled ?? false,
+          exclusive: data.data.exclusive?.enabled ?? true,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching license settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load license settings. Using defaults.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken, toast]);
+
+  // Update license settings via API
+  const updateLicenseSetting = async (key: string, value: any) => {
+    if (!accessToken) return;
+    
+    try {
+      setUpdatingLicense(selectedLicense);
+      const requestBody = { [key]: value };
+      console.log('Updating license setting:', { selectedLicense, key, value, requestBody, accessToken: accessToken ? 'Present' : 'Missing' });
+      
+      const response = await fetch(`${API_BASE_URL}/user-license-settings/${selectedLicense}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(`Failed to update license setting: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      // Update local state
+      setLicenseSettings(prev => ({
+        ...prev,
+        [selectedLicense]: {
+          ...prev[selectedLicense as keyof typeof prev],
+          [key]: value,
+        },
+      }));
+
+      // If updating the enabled state, also update the licenseEnabled state
+      if (key === 'enabled') {
+        setLicenseEnabled(prev => ({
+          ...prev,
+          [selectedLicense]: value
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating license setting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update license setting. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingLicense(null);
+    }
+  };
+
+  // Save all license settings
+  const saveLicenseSettings = async () => {
+    if (!accessToken) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Update each license type individually to ensure proper validation
+      const updatePromises = Object.keys(licenseSettings).map(licenseType => {
+        return fetch(`${API_BASE_URL}/user-license-settings/${licenseType}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(licenseSettings[licenseType])
+        });
+      });
+
+      const responses = await Promise.all(updatePromises);
+      
+      // Check if all requests were successful
+      const failedResponses = responses.filter(response => !response.ok);
+      if (failedResponses.length > 0) {
+        throw new Error(`Failed to save ${failedResponses.length} license settings`);
+      }
+
+      toast({
+        title: t('licenses.settingsSaved'),
+        description: t('licenses.settingsSavedDescription'),
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error saving license settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save license settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load license settings on component mount
+  useEffect(() => {
+    if (accessToken) {
+      fetchLicenseSettings();
+    }
+  }, [accessToken, fetchLicenseSettings]);
 
   return (
     <div className="p-6 space-y-6">
@@ -247,13 +386,9 @@ export default function DashboardLicenses() {
           />
         </DialogContent>
       </Dialog>
-          <Button onClick={() => toast({
-            title: t('licenses.settingsSaved'),
-            description: t('licenses.settingsSavedDescription'),
-            variant: "default"
-          })}>
+          <Button onClick={saveLicenseSettings} disabled={isLoading}>
             <Save className="h-4 w-4 mr-2" />
-            {t('licenses.saveChanges')}
+            {isLoading ? 'Saving...' : t('licenses.saveChanges')}
           </Button>
         </div>
       </div>
@@ -271,7 +406,9 @@ export default function DashboardLicenses() {
                 className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
                   selectedLicense === license.id
                     ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
+                    : licenseEnabled[license.id]
+                    ? "border-border hover:border-primary/50"
+                    : "border-border bg-muted/30 opacity-60"
                 }`}
                 onClick={() => setSelectedLicense(license.id)}
               >
@@ -279,14 +416,15 @@ export default function DashboardLicenses() {
                   <div className="flex items-center space-x-2">
                     <license.icon className="h-4 w-4" />
                     <span className="font-medium text-foreground">{t(license.name)}</span>
+                    {updatingLicense === license.id && (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                    )}
                   </div>
                   <Switch
                     checked={licenseEnabled[license.id]}
+                    disabled={updatingLicense === license.id}
                     onCheckedChange={(checked) => {
-                      setLicenseEnabled(prev => ({
-                        ...prev,
-                        [license.id]: checked,
-                      }))
+                      updateLicenseSetting('enabled', checked);
                       toast({
                         title: checked ? t('licenses.enabled') : t('licenses.disabled'),
                         description: checked
@@ -301,7 +439,7 @@ export default function DashboardLicenses() {
                 <p className="text-sm text-muted-foreground mb-2">{t(license.description)}</p>
                 <div className="flex items-center text-lg font-bold text-primary">
                   <DollarSign className="h-4 w-4" />
-                  {license.price}
+                  {licenseSettings[license.id]?.price || license.price}
                 </div>
               </div>
             ))}
@@ -332,6 +470,7 @@ export default function DashboardLicenses() {
                       id="price"
                       type="number"
                       value={currentSettings.price}
+                      disabled={updatingLicense === selectedLicense}
                       onChange={(e) => updateLicenseSetting("price", parseInt(e.target.value))}
                     />
                   </div>
@@ -403,6 +542,7 @@ export default function DashboardLicenses() {
                       type="number"
                       value={currentSettings.streamLimit === -1 ? "" : currentSettings.streamLimit}
                       placeholder={t('licenses.unlimited')}
+                      disabled={updatingLicense === selectedLicense}
                       onChange={(e) => updateLicenseSetting("streamLimit", e.target.value ? parseInt(e.target.value) : -1)}
                     />
                     <p className="text-xs text-muted-foreground">
@@ -416,6 +556,7 @@ export default function DashboardLicenses() {
                       type="number"
                       value={currentSettings.saleLimit === -1 ? "" : currentSettings.saleLimit}
                       placeholder={t('licenses.unlimited')}
+                      disabled={updatingLicense === selectedLicense}
                       onChange={(e) => updateLicenseSetting("saleLimit", e.target.value ? parseInt(e.target.value) : -1)}
                     />
                     <p className="text-xs text-muted-foreground">

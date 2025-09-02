@@ -10,6 +10,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "@/components/ThemeProvider";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import Hls from 'hls.js';
 
 export function MediaPlayer() {
   const { state, togglePlayPause, setVolume, seekTo, stopBeat, toggleMute, nextBeat, prevBeat } = useMediaPlayer();

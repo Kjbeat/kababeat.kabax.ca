@@ -1,5 +1,6 @@
 export interface Beat {
   id: string;
+  _id?: string; // MongoDB ID
   title: string;
   producer: string;
   artwork?: string;
@@ -7,8 +8,17 @@ export interface Beat {
   key: string;
   genre: string;
   price: number;
+  basePrice?: number;
+  salePrice?: number;
   isLiked?: boolean;
   duration?: number;
+  audioUrl?: string;
+  storageKey?: string; // R2 storage key for audio file
+  status?: string;
+  uploadDate?: string;
+  date?: string;
+  plays?: number;
+  sales?: number;
 }
 
 export interface MediaPlayerState {

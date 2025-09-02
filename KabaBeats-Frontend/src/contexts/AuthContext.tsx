@@ -266,22 +266,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         oauthThemePreferences
       });
       
-      // Build redirect URI with OAuth data as query parameters
-      const redirectParams = new URLSearchParams();
-      if (oauthUsername) redirectParams.append('username', oauthUsername);
-      if (oauthCountry) redirectParams.append('country', oauthCountry);
-      if (oauthThemePreferences) redirectParams.append('themePreferences', oauthThemePreferences);
+      // Build state parameter with OAuth data
+      const stateData = {
+        state: state,
+        username: oauthUsername,
+        country: oauthCountry,
+        themePreferences: oauthThemePreferences
+      };
       
-      const redirectUri = redirectParams.toString() 
-        ? `${baseRedirectUri}?${redirectParams.toString()}`
-        : baseRedirectUri;
+      const encodedState = encodeURIComponent(JSON.stringify(stateData));
       
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${clientId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `redirect_uri=${encodeURIComponent(baseRedirectUri)}&` +
         `scope=${encodeURIComponent(scope)}&` +
         `response_type=code&` +
-        `state=${state}`;
+        `state=${encodedState}`;
       
       // Store state for verification
       localStorage.setItem('oauth-state', state);

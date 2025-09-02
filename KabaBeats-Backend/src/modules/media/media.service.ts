@@ -1,467 +1,507 @@
-import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteFile, generateFileKey } from '@/config/cloudflare-r2';
+import { IMediaService, UploadRequest, UploadResponse, ProcessingResult } from './media.interface';
+import { MediaFile, IMediaFile } from './media.model';
+import { generateUploadUrl, generateDownloadUrl, deleteStorageFile, STORAGE_PATHS } from '@/utils/r2Storage';
+import { processMediaFile, validateAudioFile, validateImageFile, getImageDimensions, getAudioSettings } from '@/utils/mediaProcessor';
+import { 
+  initializeChunkedUpload, 
+  generateChunkUploadUrl, 
+  markChunkUploaded, 
+  isUploadComplete, 
+  getUploadProgress, 
+  completeChunkedUpload, 
+  abortChunkedUpload,
+  ChunkedUploadSession,
+  ChunkUploadRequest 
+} from '@/utils/chunkedUpload';
+import { processAudioFile, extractAudioMetadata, ProcessingOptions } from '@/utils/audioProcessor';
 import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import fs from 'fs';
-import { 
-  UploadOptions, 
-  ChunkedUploadOptions, 
-  AudioProcessingOptions, 
-  StreamingUrls, 
-  ArtworkUrls, 
-  UploadSession 
-} from './media.interface';
+import { User } from '../auth/auth.model';
+import { Beat } from '../beat/beat.model';
 
-const execAsync = promisify(exec);
+export class MediaService implements IMediaService {
+  /**
+   * Generate upload URL for media files
+   */
+  async generateUploadUrl(request: UploadRequest): Promise<UploadResponse> {
+    try {
+      // Validate user exists
+      const user = await User.findById(request.userId);
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
 
-export class MediaService {
-  private uploadSessions: Map<string, UploadSession> = new Map();
+      // Validate beat exists for beat-related uploads
+      if (request.beatId) {
+        const beat = await Beat.findOne({ _id: request.beatId, owner: request.userId });
+        if (!beat) {
+          throw new CustomError('Beat not found or access denied', 404);
+        }
+      }
+
+      // Generate upload URL
+      const result = await generateUploadUrl(request);
+      
+      logger.info(`Generated upload URL for user ${request.userId}: ${result.key}`);
+      
+      return result;
+    } catch (error) {
+      logger.error('Error generating upload URL:', error);
+      throw error;
+    }
+  }
 
   /**
-   * Initialize chunked upload session
+   * Confirm file upload and process media
    */
-  async initializeChunkedUpload(options: ChunkedUploadOptions): Promise<{
-    uploadId: string;
-    chunkSize: number;
-    totalChunks: number;
-    uploadUrls: string[];
-  }> {
+  async confirmUpload(
+    userId: string,
+    key: string,
+    fileType: 'audio' | 'image' | 'profile' | 'artwork',
+    beatId?: string
+  ): Promise<IMediaFile> {
     try {
-      const { type, filename, contentType, size, userId, totalChunks, chunkSize } = options;
+      // Validate user exists
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      // Validate beat exists for beat-related uploads
+      if (beatId) {
+        const beat = await Beat.findOne({ _id: beatId, userId });
+        if (!beat) {
+          throw new CustomError('Beat not found or access denied', 404);
+        }
+      }
+
+      // Process the uploaded file
+      const processingResult = await this.processUploadedFile(key, fileType);
       
-      // Validate file
-      this.validateFile(options);
-      
-      // Generate upload session
-      const uploadId = this.generateUploadId();
-      const session: UploadSession = {
-        uploadId,
+      // Create media file record
+      const mediaFile = new MediaFile({
+        key: processingResult.originalKey,
+        processedKey: processingResult.processedKey,
+        thumbnailKey: processingResult.thumbnailKey,
         userId,
-        filename,
-        contentType,
-        totalChunks,
-        uploadedChunks: [],
-        status: 'initialized',
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      };
+        beatId,
+        fileType,
+        metadata: processingResult.metadata,
+        status: 'processed',
+        uploadedAt: new Date(),
+      });
+
+      await mediaFile.save();
       
-      this.uploadSessions.set(uploadId, session);
+      logger.info(`Confirmed upload for user ${userId}: ${key}`);
       
-      // Generate presigned URLs for each chunk
-      const uploadUrls: string[] = [];
-      for (let i = 0; i < totalChunks; i++) {
-        const chunkKey = `uploads/${uploadId}/chunk_${i}`;
-        const { uploadUrl } = await generatePresignedUploadUrl(chunkKey, 'application/octet-stream', 3600);
-        uploadUrls.push(uploadUrl);
+      return mediaFile;
+    } catch (error) {
+      logger.error('Error confirming upload:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get download URL for a media file
+   */
+  async getDownloadUrl(userId: string, fileId: string, expiresIn: number = 3600): Promise<string> {
+    try {
+      const mediaFile = await MediaFile.findOne({ _id: fileId, userId });
+      if (!mediaFile) {
+        throw new CustomError('File not found or access denied', 404);
+      }
+
+      const downloadUrl = await generateDownloadUrl(mediaFile.key, expiresIn);
+      
+      logger.info(`Generated download URL for user ${userId}: ${mediaFile.key}`);
+      
+      return downloadUrl;
+    } catch (error) {
+      logger.error('Error getting download URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a media file
+   */
+  async deleteFile(userId: string, fileId: string): Promise<void> {
+    try {
+      const mediaFile = await MediaFile.findOne({ _id: fileId, userId });
+      if (!mediaFile) {
+        throw new CustomError('File not found or access denied', 404);
+      }
+
+      // Delete from storage
+      await deleteStorageFile(mediaFile.key);
+      if (mediaFile.processedKey) {
+        await deleteStorageFile(mediaFile.processedKey);
+      }
+      if (mediaFile.thumbnailKey) {
+        await deleteStorageFile(mediaFile.thumbnailKey);
+      }
+
+      // Delete from database
+      await MediaFile.findByIdAndDelete(fileId);
+      
+      logger.info(`Deleted file for user ${userId}: ${mediaFile.key}`);
+    } catch (error) {
+      logger.error('Error deleting file:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user's media files
+   */
+  async getUserFiles(userId: string, fileType?: string, beatId?: string): Promise<IMediaFile[]> {
+    try {
+      const query: any = { userId };
+      
+      if (fileType) {
+        query.fileType = fileType;
       }
       
-      logger.info(`Initialized chunked upload: ${uploadId} for ${filename}`);
+      if (beatId) {
+        query.beatId = beatId;
+      }
+
+      const files = await MediaFile.find(query).sort({ uploadedAt: -1 });
+      
+      logger.info(`Retrieved ${files.length} files for user ${userId}`);
+      
+      return files;
+    } catch (error) {
+      logger.error('Error getting user files:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update file metadata
+   */
+  async updateFileMetadata(
+    userId: string,
+    fileId: string,
+    metadata: Partial<IMediaFile>
+  ): Promise<IMediaFile> {
+    try {
+      const mediaFile = await MediaFile.findOne({ _id: fileId, userId });
+      if (!mediaFile) {
+        throw new CustomError('File not found or access denied', 404);
+      }
+
+      // Update allowed fields
+      const allowedFields = ['title', 'description', 'tags', 'isPublic'];
+      allowedFields.forEach(field => {
+        if (metadata[field as keyof IMediaFile] !== undefined) {
+          (mediaFile as any)[field] = metadata[field as keyof IMediaFile];
+        }
+      });
+
+      await mediaFile.save();
+      
+      logger.info(`Updated metadata for file ${fileId}`);
+      
+      return mediaFile;
+    } catch (error) {
+      logger.error('Error updating file metadata:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process uploaded file based on type
+   */
+  private async processUploadedFile(
+    key: string,
+    fileType: string
+  ): Promise<ProcessingResult> {
+    try {
+      // Determine content type from key
+      const contentType = this.getContentTypeFromKey(key);
+      
+      // Set processing options based on file type
+      const options = this.getProcessingOptions(fileType);
+      
+      // Process the file
+      const result = await processMediaFile(key, contentType, options as any);
+      
+      logger.info(`Processed file: ${key}`);
+      
+      return result;
+    } catch (error) {
+      logger.error('Error processing uploaded file:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get content type from file key
+   */
+  private getContentTypeFromKey(key: string): string {
+    const extension = key.split('.').pop()?.toLowerCase();
+    
+    const contentTypes: Record<string, string> = {
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'm4a': 'audio/m4a',
+      'flac': 'audio/flac',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+    };
+    
+    return contentTypes[extension || ''] || 'application/octet-stream';
+  }
+
+  /**
+   * Get processing options based on file type
+   */
+  private getProcessingOptions(fileType: string) {
+    switch (fileType) {
+      case 'audio':
+        return {
+          audio: getAudioSettings('full'),
+        };
+      case 'artwork':
+        return {
+          image: {
+            quality: 90,
+            format: 'jpeg',
+            ...getImageDimensions('artwork'),
+            generateThumbnail: true,
+          },
+        };
+      case 'profile':
+        return {
+          image: {
+            quality: 85,
+            format: 'jpeg',
+            ...getImageDimensions('profile'),
+            generateThumbnail: true,
+          },
+        };
+      default:
+        return {};
+    }
+  }
+
+  /**
+   * Initialize chunked upload for large files
+   */
+  async initializeChunkedUpload(request: {
+    userId: string;
+    fileName: string;
+    fileSize: number;
+    contentType: string;
+    beatId?: string;
+    fileType: 'audio' | 'image' | 'profile' | 'artwork';
+  }): Promise<ChunkedUploadSession> {
+    try {
+      // Validate user exists
+      const user = await User.findById(request.userId);
+      if (!user) {
+        throw new CustomError('User not found', 404);
+      }
+
+      // Validate beat exists for beat-related uploads
+      if (request.beatId) {
+        const beat = await Beat.findOne({ _id: request.beatId, userId: request.userId });
+        if (!beat) {
+          throw new CustomError('Beat not found or access denied', 404);
+        }
+      }
+
+      const session = await initializeChunkedUpload(request);
+      
+      logger.info(`Initialized chunked upload session: ${session.sessionId}`);
+      
+      return session;
+    } catch (error) {
+      logger.error('Error initializing chunked upload:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate upload URL for a specific chunk
+   */
+  async generateChunkUploadUrl(request: ChunkUploadRequest): Promise<{
+    uploadUrl: string;
+    chunkKey: string;
+    expiresIn: number;
+  }> {
+    try {
+      const result = await generateChunkUploadUrl(request);
+      
+      logger.info(`Generated chunk upload URL for session: ${request.sessionId}, chunk: ${request.chunkNumber}`);
+      
+      return result;
+    } catch (error) {
+      logger.error('Error generating chunk upload URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark chunk as uploaded
+   */
+  async markChunkUploaded(sessionId: string, chunkNumber: number): Promise<void> {
+    try {
+      await markChunkUploaded(sessionId, chunkNumber);
+      
+      logger.info(`Marked chunk ${chunkNumber} as uploaded for session: ${sessionId}`);
+    } catch (error) {
+      logger.error('Error marking chunk as uploaded:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get upload progress
+   */
+  async getUploadProgress(sessionId: string): Promise<{
+    uploaded: number;
+    total: number;
+    percentage: number;
+  }> {
+    try {
+      const progress = await getUploadProgress(sessionId);
+      
+      logger.info(`Upload progress for session ${sessionId}: ${progress.percentage}%`);
+      
+      return progress;
+    } catch (error) {
+      logger.error('Error getting upload progress:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete chunked upload
+   */
+  async completeChunkedUpload(request: {
+    sessionId: string;
+    userId: string;
+    checksum: string;
+  }): Promise<{
+    finalKey: string;
+    downloadUrl: string;
+    mediaFile: IMediaFile;
+  }> {
+    try {
+      // Complete the upload
+      const result = await completeChunkedUpload(request);
+      
+      // Process the audio file if it's an audio upload
+      const session = this.getUploadSession(request.sessionId);
+      if (session && session.fileType === 'audio') {
+        await this.processAudioFile(result.finalKey, session);
+      }
+      
+      // Create media file record
+      const mediaFile = new MediaFile({
+        key: result.finalKey,
+        userId: request.userId,
+        beatId: session?.beatId,
+        fileType: session?.fileType || 'audio',
+        metadata: {
+          format: 'audio/mpeg',
+          size: session?.fileSize || 0,
+        },
+        status: 'processed',
+        uploadedAt: new Date(),
+      });
+
+      await mediaFile.save();
+      
+      logger.info(`Completed chunked upload: ${result.finalKey}`);
       
       return {
-        uploadId,
-        chunkSize,
-        totalChunks,
-        uploadUrls,
+        finalKey: result.finalKey,
+        downloadUrl: result.downloadUrl,
+        mediaFile,
       };
     } catch (error) {
-      logger.error('Initialize chunked upload error:', error);
+      logger.error('Error completing chunked upload:', error);
       throw error;
     }
   }
 
   /**
-   * Complete chunked upload and process files
+   * Abort chunked upload
    */
-  async completeChunkedUpload(
-    uploadId: string,
-    metadata: any,
-    processingOptions: AudioProcessingOptions = {}
-  ): Promise<{
-    beatId: string;
-    streamingUrls: StreamingUrls;
-    artworkUrls?: ArtworkUrls;
-  }> {
+  async abortChunkedUpload(sessionId: string): Promise<void> {
     try {
-      const session = this.uploadSessions.get(uploadId);
-      if (!session) {
-        throw new CustomError('Upload session not found', 404);
-      }
-
-      if (session.status !== 'initialized') {
-        throw new CustomError('Upload session not in valid state', 400);
-      }
-
-      // Update session status
-      session.status = 'processing';
-      this.uploadSessions.set(uploadId, session);
-
-      // Reassemble file from chunks
-      const assembledFile = await this.reassembleChunks(uploadId, session.filename);
+      await abortChunkedUpload(sessionId);
       
-      // Generate beat ID
-      const beatId = this.generateBeatId();
-      
-      // Process based on file type
-      if (session.contentType.startsWith('audio/')) {
-        const result = await this.processAudioFile(
-          assembledFile,
-          beatId,
-          session.userId,
-          metadata,
-          processingOptions
-        );
-        
-        // Update session status
-        session.status = 'completed';
-        this.uploadSessions.set(uploadId, session);
-        
-        // Clean up temporary files
-        await this.cleanupUploadSession(uploadId);
-        
-        return result;
-      } else if (session.contentType.startsWith('image/')) {
-        const result = await this.processImageFile(
-          assembledFile,
-          beatId,
-          session.userId
-        );
-        
-        session.status = 'completed';
-        this.uploadSessions.set(uploadId, session);
-        
-        await this.cleanupUploadSession(uploadId);
-        
-        return {
-          beatId: result.beatId,
-          streamingUrls: {
-            preview: '',
-            low: '',
-            medium: '',
-            high: '',
-            hls: '',
-          },
-          artworkUrls: result.artworkUrls,
-        };
-      } else {
-        throw new CustomError('Unsupported file type', 400);
-      }
+      logger.info(`Aborted chunked upload session: ${sessionId}`);
     } catch (error) {
-      logger.error('Complete chunked upload error:', error);
-      
-      // Update session status to failed
-      const session = this.uploadSessions.get(uploadId);
-      if (session) {
-        session.status = 'failed';
-        this.uploadSessions.set(uploadId, session);
-      }
-      
+      logger.error('Error aborting chunked upload:', error);
       throw error;
     }
   }
 
+  // HLS methods removed
+
   /**
-   * Process audio file and generate multiple qualities
+   * Process audio file for streaming
    */
-  private async processAudioFile(
-    filePath: string,
-    beatId: string,
-    userId: string,
-    metadata: any,
-    options: AudioProcessingOptions
-  ): Promise<{ beatId: string; streamingUrls: StreamingUrls }> {
+  private async processAudioFile(fileKey: string, session: ChunkedUploadSession): Promise<void> {
     try {
-      const baseKey = `audio/${userId}/${beatId}`;
-      const tempDir = path.join(process.cwd(), 'temp', beatId);
-      
-      // Create temp directory
-      await fs.promises.mkdir(tempDir, { recursive: true });
-      
-      // Extract metadata
-      const audioMetadata = await this.extractAudioMetadata(filePath);
-      
-      // Generate preview (30 seconds)
-      const previewPath = path.join(tempDir, 'preview.mp3');
-      await this.generatePreview(filePath, previewPath);
-      
-      // Generate multiple quality versions
-      const qualities = [
-        { name: 'low', bitrate: '128k', path: path.join(tempDir, '128k.mp3') },
-        { name: 'medium', bitrate: '320k', path: path.join(tempDir, '320k.mp3') },
-        { name: 'high', bitrate: 'lossless', path: path.join(tempDir, 'lossless.wav') },
-      ];
-      
-      const qualityPromises = qualities.map(quality => 
-        this.generateAudioQuality(filePath, quality.path, quality.bitrate)
-      );
-      
-      await Promise.all(qualityPromises);
-      
-      // Upload all versions to R2
-      const uploadPromises = [
-        this.uploadToR2(previewPath, `${baseKey}/preview.mp3`),
-        this.uploadToR2(qualities[0]!.path, `${baseKey}/128k.mp3`),
-        this.uploadToR2(qualities[1]!.path, `${baseKey}/320k.mp3`),
-        this.uploadToR2(qualities[2]!.path, `${baseKey}/lossless.wav`),
-      ];
-      
-      await Promise.all(uploadPromises);
-      
-      // Generate HLS playlist
-      const hlsUrl = await this.generateHLSPlaylist(beatId, baseKey);
-      
-      // Generate streaming URLs
-      const streamingUrls: StreamingUrls = {
-        preview: await generatePresignedDownloadUrl(`${baseKey}/preview.mp3`, 86400),
-        low: await generatePresignedDownloadUrl(`${baseKey}/128k.mp3`, 86400),
-        medium: await generatePresignedDownloadUrl(`${baseKey}/320k.mp3`, 86400),
-        high: await generatePresignedDownloadUrl(`${baseKey}/lossless.wav`, 86400),
-        hls: hlsUrl,
+      const processingOptions: ProcessingOptions = {
+        generatePreview: true,
+        previewDuration: 30,
+        generateHLS: false,
+        outputFormats: ['mp3'],
+        quality: 'medium',
       };
+
+      // In a real implementation, you would:
+      // 1. Download the file from R2
+      // 2. Process it with FFmpeg
+      // 3. Upload processed versions back to R2
       
-      // Clean up temp files
-      await fs.promises.rm(tempDir, { recursive: true, force: true });
-      
-      logger.info(`Audio processing completed for beat: ${beatId}`);
-      
-      return { beatId, streamingUrls };
+      logger.info(`Processing audio file for streaming: ${fileKey}`);
     } catch (error) {
-      logger.error('Process audio file error:', error);
+      logger.error('Error processing audio file:', error);
       throw error;
     }
   }
 
   /**
-   * Process image file and generate multiple sizes
+   * Get upload session (helper method)
    */
-  private async processImageFile(
-    filePath: string,
-    beatId: string,
-    userId: string
-  ): Promise<{ beatId: string; artworkUrls: ArtworkUrls }> {
-    try {
-      const baseKey = `artwork/${userId}/${beatId}`;
-      const tempDir = path.join(process.cwd(), 'temp', beatId);
-      
-      await fs.promises.mkdir(tempDir, { recursive: true });
-      
-      // Generate multiple sizes
-      const sizes = [
-        { name: 'mini', size: '150x150', path: path.join(tempDir, '150x150.webp') },
-        { name: 'small', size: '300x300', path: path.join(tempDir, '300x300.webp') },
-        { name: 'medium', size: '600x600', path: path.join(tempDir, '600x600.webp') },
-        { name: 'large', size: '1200x1200', path: path.join(tempDir, '1200x1200.webp') },
-      ];
-      
-      const sizePromises = sizes.map(size => 
-        this.generateImageSize(filePath, size.path, size.size)
-      );
-      
-      await Promise.all(sizePromises);
-      
-      // Upload all sizes to R2
-      const uploadPromises = sizes.map(size => 
-        this.uploadToR2(size.path, `${baseKey}/${size.name}.webp`)
-      );
-      
-      await Promise.all(uploadPromises);
-      
-      // Generate artwork URLs
-      const artworkUrls: ArtworkUrls = {
-        mini: await generatePresignedDownloadUrl(`${baseKey}/mini.webp`, 86400),
-        small: await generatePresignedDownloadUrl(`${baseKey}/small.webp`, 86400),
-        medium: await generatePresignedDownloadUrl(`${baseKey}/medium.webp`, 86400),
-        large: await generatePresignedDownloadUrl(`${baseKey}/large.webp`, 86400),
-      };
-      
-      // Clean up temp files
-      await fs.promises.rm(tempDir, { recursive: true, force: true });
-      
-      logger.info(`Image processing completed for beat: ${beatId}`);
-      
-      return { beatId, artworkUrls };
-    } catch (error) {
-      logger.error('Process image file error:', error);
-      throw error;
-    }
+  private getUploadSession(sessionId: string): ChunkedUploadSession | null {
+    // In a real implementation, you would retrieve this from Redis or database
+    return null;
   }
 
   /**
-   * Generate HLS playlist for adaptive streaming
+   * Clean up orphaned files
    */
-  private async generateHLSPlaylist(beatId: string, baseKey: string): Promise<string> {
+  async cleanupOrphanedFiles(): Promise<void> {
     try {
-      const playlistContent = `#EXTM3U
-#EXT-X-VERSION:3
-#EXT-X-STREAM-INF:BANDWIDTH=128000,CODECS="mp4a.40.2"
-${baseKey}/128k.m3u8
-#EXT-X-STREAM-INF:BANDWIDTH=320000,CODECS="mp4a.40.2"
-${baseKey}/320k.m3u8
-#EXT-X-STREAM-INF:BANDWIDTH=1411000,CODECS="mp4a.40.2"
-${baseKey}/lossless.m3u8`;
+      // Find files that are not associated with any beat or user
+      const orphanedFiles = await MediaFile.find({
+        $or: [
+          { userId: { $exists: false } },
+          { beatId: { $exists: true, $ne: null }, beat: { $exists: false } },
+        ],
+        uploadedAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Older than 24 hours
+      });
 
-      const playlistKey = `playlists/${beatId}/master.m3u8`;
-      
-      // Upload playlist to R2
-      await this.uploadToR2(Buffer.from(playlistContent), playlistKey, 'application/vnd.apple.mpegurl');
-      
-      return await generatePresignedDownloadUrl(playlistKey, 86400);
-    } catch (error) {
-      logger.error('Generate HLS playlist error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Extract audio metadata using FFprobe
-   */
-  private async extractAudioMetadata(filePath: string): Promise<any> {
-    try {
-      const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${filePath}"`;
-      const { stdout } = await execAsync(command);
-      return JSON.parse(stdout);
-    } catch (error) {
-      logger.error('Extract audio metadata error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate audio preview (30 seconds)
-   */
-  private async generatePreview(inputPath: string, outputPath: string): Promise<void> {
-    try {
-      const command = `ffmpeg -i "${inputPath}" -t 30 -b:a 64k -ac 2 "${outputPath}"`;
-      await execAsync(command);
-    } catch (error) {
-      logger.error('Generate preview error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate audio quality version
-   */
-  private async generateAudioQuality(inputPath: string, outputPath: string, bitrate: string): Promise<void> {
-    try {
-      let command: string;
-      
-      if (bitrate === 'lossless') {
-        command = `ffmpeg -i "${inputPath}" -c:a flac "${outputPath}"`;
-      } else {
-        command = `ffmpeg -i "${inputPath}" -b:a ${bitrate} -ac 2 "${outputPath}"`;
+      for (const file of orphanedFiles) {
+        await this.deleteFile(file.userId, (file._id as any).toString());
       }
-      
-      await execAsync(command);
+
+      logger.info(`Cleaned up ${orphanedFiles.length} orphaned files`);
     } catch (error) {
-      logger.error('Generate audio quality error:', error);
+      logger.error('Error cleaning up orphaned files:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Generate image size
-   */
-  private async generateImageSize(inputPath: string, outputPath: string, size: string): Promise<void> {
-    try {
-      const command = `ffmpeg -i "${inputPath}" -vf scale=${size} -c:v libwebp -quality 80 "${outputPath}"`;
-      await execAsync(command);
-    } catch (error) {
-      logger.error('Generate image size error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Upload file to R2
-   */
-  private async uploadToR2(filePath: string | Buffer, key: string, contentType?: string): Promise<void> {
-    try {
-      // This would use the R2 client to upload the file
-      // Implementation depends on your R2 setup
-      logger.info(`Uploaded to R2: ${key}`);
-    } catch (error) {
-      logger.error('Upload to R2 error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Reassemble chunks into complete file
-   */
-  private async reassembleChunks(uploadId: string, filename: string): Promise<string> {
-    try {
-      // Implementation for reassembling chunks
-      // This would download chunks from R2 and combine them
-      const outputPath = path.join(process.cwd(), 'temp', uploadId, filename);
-      logger.info(`Reassembled file: ${outputPath}`);
-      return outputPath;
-    } catch (error) {
-      logger.error('Reassemble chunks error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Clean up upload session
-   */
-  private async cleanupUploadSession(uploadId: string): Promise<void> {
-    try {
-      // Clean up temporary files and R2 chunks
-      this.uploadSessions.delete(uploadId);
-      logger.info(`Cleaned up upload session: ${uploadId}`);
-    } catch (error) {
-      logger.error('Cleanup upload session error:', error);
-    }
-  }
-
-  /**
-   * Get upload session status
-   */
-  getUploadStatus(uploadId: string): UploadSession | null {
-    return this.uploadSessions.get(uploadId) || null;
-  }
-
-  /**
-   * Generate unique upload ID
-   */
-  private generateUploadId(): string {
-    return `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Generate unique beat ID
-   */
-  private generateBeatId(): string {
-    return `beat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Validate file upload
-   */
-  private validateFile(options: UploadOptions): void {
-    const { type, contentType, size } = options;
-    
-    // File size limits
-    const maxSizes = {
-      audio: 100 * 1024 * 1024, // 100MB
-      image: 10 * 1024 * 1024,  // 10MB
-    };
-
-    if (size > maxSizes[type]) {
-      throw new CustomError(`File size exceeds limit for ${type}`, 400);
-    }
-
-    // Content type validation
-    const allowedTypes = {
-      audio: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/m4a', 'audio/flac'],
-      image: ['image/jpeg', 'image/png', 'image/webp'],
-    };
-
-    if (!allowedTypes[type].includes(contentType)) {
-      throw new CustomError(`Invalid file type for ${type}`, 400);
     }
   }
 }

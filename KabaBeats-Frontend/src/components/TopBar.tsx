@@ -366,19 +366,27 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className={cn("p-1", iconHover)}>
               <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                <AvatarImage src="/placeholder-avatar.jpg" alt={user?.name} />
+                <AvatarImage src={user?.avatar || "/placeholder-avatar.jpg"} alt={user?.username} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                  {user?.name?.charAt(0).toUpperCase()}
+                  {user?.firstName && user?.lastName 
+                    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                    : user?.username?.charAt(0).toUpperCase() || 'U'
+                  }
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-sm font-medium truncate">
+                {user?.firstName && user?.lastName 
+                  ? `${user.firstName} ${user.lastName}`
+                  : user?.username || 'User'
+                }
+              </p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               <p className="text-xs text-muted-foreground">
-                {user?.isProducer ? "Producer" : "Artist"} • {user?.country}
+                {user?.role === 'creator' ? "Creator" : user?.role === 'admin' ? "Admin" : "User"} • {user?.country}
               </p>
             </div>
             <DropdownMenuSeparator />

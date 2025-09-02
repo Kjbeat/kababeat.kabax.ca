@@ -1,6 +1,7 @@
 export { default as authRoutes } from './auth.routes';
 export { default as userRoutes } from './user.routes';
 export { default as beatRoutes } from './beat.routes';
+export { default as licenseRoutes } from './license.routes';
 export { default as playlistRoutes } from './playlist.routes';
 export { default as mediaRoutes } from './media.routes';
 export { default as browseRoutes } from './browse.routes';

@@ -1,11 +1,20 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+  };
+}
+import { IMediaController, UploadRequest } from './media.interface';
 import { MediaService } from './media.service';
 import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
 import { ApiResponse } from '@/types';
-import { AuthRequest } from '@/modules/auth/auth.interface';
+import { getCacheHeaders } from '@/config/cdn';
 
-export class MediaController {
+export class MediaController implements IMediaController {
   private mediaService: MediaService;
 
   constructor() {
@@ -13,290 +22,498 @@ export class MediaController {
   }
 
   /**
-   * Initialize chunked upload
+   * Generate upload URL for media files
    */
-  initializeChunkedUpload = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async generateUploadUrl(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.userId;
       if (!userId) {
         throw new CustomError('User not authenticated', 401);
       }
 
-      const { filename, contentType, size, type } = req.body;
-      
-      if (!filename || !contentType || !size || !type) {
+      const { fileType, originalName, contentType, size, beatId } = req.body;
+
+      // Validate required fields
+      if (!fileType || !originalName || !contentType || !size) {
         throw new CustomError('Missing required fields', 400);
       }
 
-      // Calculate chunks
-      const chunkSize = 5 * 1024 * 1024; // 5MB chunks
-      const totalChunks = Math.ceil(size / chunkSize);
+      // Validate file type
+      if (!['audio', 'image', 'profile', 'artwork'].includes(fileType)) {
+        throw new CustomError('Invalid file type', 400);
+      }
 
-      const result = await this.mediaService.initializeChunkedUpload({
-        type,
-        filename,
-        contentType,
-        size,
+      // Validate beatId for beat-related uploads
+      if (['audio', 'artwork'].includes(fileType) && !beatId) {
+        throw new CustomError('Beat ID required for audio and artwork uploads', 400);
+      }
+
+      const uploadRequest: UploadRequest = {
         userId,
-        totalChunks,
-        chunkSize,
-      });
+        fileType,
+        originalName,
+        contentType,
+        size: parseInt(size),
+        beatId,
+      };
 
-      const response: ApiResponse = {
+      const result = await this.mediaService.generateUploadUrl(uploadRequest);
+
+      const response: ApiResponse<typeof result> = {
         success: true,
         data: result,
       };
 
       res.status(200).json(response);
     } catch (error) {
-      next(error);
+      logger.error('Generate upload URL error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to generate upload URL',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
     }
-  };
+  }
+
+  /**
+   * Confirm file upload and process media
+   */
+  async confirmUpload(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { key, fileType, beatId } = req.body;
+
+      // Validate required fields
+      if (!key || !fileType) {
+        throw new CustomError('Missing required fields', 400);
+      }
+
+      // Validate file type
+      if (!['audio', 'image', 'profile', 'artwork'].includes(fileType)) {
+        throw new CustomError('Invalid file type', 400);
+      }
+
+      const mediaFile = await this.mediaService.confirmUpload(userId, key, fileType, beatId);
+
+      const response: ApiResponse<typeof mediaFile> = {
+        success: true,
+        data: mediaFile,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Confirm upload error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to confirm upload',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Get download URL for a media file
+   */
+  async getDownloadUrl(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { fileId } = req.params;
+      const { expiresIn = 3600 } = req.query;
+
+      if (!fileId) {
+        throw new CustomError('File ID required', 400);
+      }
+
+      const downloadUrl = await this.mediaService.getDownloadUrl(
+        userId,
+        fileId,
+        parseInt(expiresIn as string)
+      );
+
+      const response: ApiResponse<{ downloadUrl: string }> = {
+        success: true,
+        data: { downloadUrl },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Get download URL error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to get download URL',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Delete a media file
+   */
+  async deleteFile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { fileId } = req.params;
+
+      if (!fileId) {
+        throw new CustomError('File ID required', 400);
+      }
+
+      await this.mediaService.deleteFile(userId, fileId);
+
+      const response: ApiResponse<null> = {
+        success: true,
+        data: null,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Delete file error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to delete file',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Get user's media files
+   */
+  async getUserFiles(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { fileType, beatId } = req.query;
+
+      const files = await this.mediaService.getUserFiles(
+        userId,
+        fileType as string,
+        beatId as string
+      );
+
+      const response: ApiResponse<typeof files> = {
+        success: true,
+        data: files,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Get user files error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to get user files',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Update file metadata
+   */
+  async updateFileMetadata(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { fileId } = req.params;
+      const { title, description, tags, isPublic } = req.body;
+
+      if (!fileId) {
+        throw new CustomError('File ID required', 400);
+      }
+
+      const mediaFile = await this.mediaService.updateFileMetadata(userId, fileId, {
+        title,
+        description,
+        tags,
+        isPublic,
+      });
+
+      const response: ApiResponse<typeof mediaFile> = {
+        success: true,
+        data: mediaFile,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Update file metadata error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to update file metadata',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Initialize chunked upload
+   */
+  async initializeChunkedUpload(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { fileName, fileSize, contentType, beatId, fileType } = req.body;
+
+      // Validate required fields
+      if (!fileName || !fileSize || !contentType || !fileType) {
+        throw new CustomError('Missing required fields', 400);
+      }
+
+      const session = await this.mediaService.initializeChunkedUpload({
+        userId,
+        fileName,
+        fileSize: parseInt(fileSize),
+        contentType,
+        beatId,
+        fileType,
+      });
+
+      const response: ApiResponse<typeof session> = {
+        success: true,
+        data: session,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Initialize chunked upload error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to initialize chunked upload',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Generate chunk upload URL
+   */
+  async generateChunkUploadUrl(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { sessionId, chunkNumber, chunkSize, totalChunks, fileName, fileSize, contentType, beatId, fileType } = req.body;
+
+      // Validate required fields
+      if (!sessionId || chunkNumber === undefined || !chunkSize || !totalChunks || !fileName || !fileSize || !contentType || !fileType) {
+        throw new CustomError('Missing required fields', 400);
+      }
+
+      const result = await this.mediaService.generateChunkUploadUrl({
+        sessionId,
+        chunkNumber: parseInt(chunkNumber),
+        chunkSize: parseInt(chunkSize),
+        totalChunks: parseInt(totalChunks),
+        fileName,
+        fileSize: parseInt(fileSize),
+        contentType,
+        userId,
+        beatId,
+        fileType,
+      });
+
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Generate chunk upload URL error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to generate chunk upload URL',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Mark chunk as uploaded
+   */
+  async markChunkUploaded(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { sessionId, chunkNumber } = req.body;
+
+      if (!sessionId || chunkNumber === undefined) {
+        throw new CustomError('Missing required fields', 400);
+      }
+
+      await this.mediaService.markChunkUploaded(sessionId, parseInt(chunkNumber));
+
+      const response: ApiResponse<null> = {
+        success: true,
+        data: null,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Mark chunk uploaded error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to mark chunk as uploaded',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
+
+  /**
+   * Get upload progress
+   */
+  async getUploadProgress(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new CustomError('User not authenticated', 401);
+      }
+
+      const { sessionId } = req.params;
+
+      if (!sessionId) {
+        throw new CustomError('Session ID required', 400);
+      }
+
+      const progress = await this.mediaService.getUploadProgress(sessionId);
+
+      const response: ApiResponse<typeof progress> = {
+        success: true,
+        data: progress,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('Get upload progress error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to get upload progress',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
+    }
+  }
 
   /**
    * Complete chunked upload
    */
-  completeChunkedUpload = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async completeChunkedUpload(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.userId;
       if (!userId) {
         throw new CustomError('User not authenticated', 401);
       }
 
-      const { uploadId, metadata, processingOptions } = req.body;
+      const { sessionId, checksum } = req.body;
 
-      if (!uploadId) {
-        throw new CustomError('Upload ID is required', 400);
+      if (!sessionId || !checksum) {
+        throw new CustomError('Missing required fields', 400);
       }
 
-      const result = await this.mediaService.completeChunkedUpload(
-        uploadId,
-        metadata || {},
-        processingOptions || {}
-      );
+      const result = await this.mediaService.completeChunkedUpload({
+        sessionId,
+        userId,
+        checksum,
+      });
 
-      const response: ApiResponse = {
+      const response: ApiResponse<typeof result> = {
         success: true,
         data: result,
       };
 
       res.status(200).json(response);
     } catch (error) {
-      next(error);
+      logger.error('Complete chunked upload error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to complete chunked upload',
+        },
+      };
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
     }
-  };
+  }
 
   /**
-   * Get upload status
+   * Abort chunked upload
    */
-  getUploadStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { uploadId } = req.params;
-
-      if (!uploadId) {
-        throw new CustomError('Upload ID is required', 400);
-      }
-
-      const status = this.mediaService.getUploadStatus(uploadId);
-
-      if (!status) {
-        throw new CustomError('Upload session not found', 404);
-      }
-
-      const response: ApiResponse = {
-        success: true,
-        data: status,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Generate streaming URLs
-   */
-  generateStreamingUrls = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { beatId } = req.params;
-
-      if (!beatId) {
-        throw new CustomError('Beat ID is required', 400);
-      }
-
-      // This would typically fetch from database and generate URLs
-      const streamingUrls = {
-        preview: `https://r2.example.com/audio/${beatId}/preview.mp3`,
-        low: `https://r2.example.com/audio/${beatId}/128k.mp3`,
-        medium: `https://r2.example.com/audio/${beatId}/320k.mp3`,
-        high: `https://r2.example.com/audio/${beatId}/lossless.wav`,
-        hls: `https://r2.example.com/playlists/${beatId}/master.m3u8`,
-      };
-
-      const response: ApiResponse = {
-        success: true,
-        data: streamingUrls,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Generate artwork URLs
-   */
-  generateArtworkUrls = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { beatId } = req.params;
-
-      if (!beatId) {
-        throw new CustomError('Beat ID is required', 400);
-      }
-
-      const artworkUrls = {
-        mini: `https://r2.example.com/artwork/${beatId}/150x150.webp`,
-        small: `https://r2.example.com/artwork/${beatId}/300x300.webp`,
-        medium: `https://r2.example.com/artwork/${beatId}/600x600.webp`,
-        large: `https://r2.example.com/artwork/${beatId}/1200x1200.webp`,
-      };
-
-      const response: ApiResponse = {
-        success: true,
-        data: artworkUrls,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Delete file
-   */
-  deleteFile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async abortChunkedUpload(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.userId;
       if (!userId) {
         throw new CustomError('User not authenticated', 401);
       }
 
-      const { key } = req.params;
+      const { sessionId } = req.params;
 
-      if (!key) {
-        throw new CustomError('File key is required', 400);
+      if (!sessionId) {
+        throw new CustomError('Session ID required', 400);
       }
 
-      // TODO: Implement file deletion
-      // await this.mediaService.deleteFile(key);
+      await this.mediaService.abortChunkedUpload(sessionId);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<null> = {
         success: true,
-        data: { message: 'File deleted successfully' },
+        data: null,
       };
 
       res.status(200).json(response);
     } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Get file info
-   */
-  getFileInfo = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { key } = req.params;
-
-      if (!key) {
-        throw new CustomError('File key is required', 400);
-      }
-
-      // TODO: Implement file info retrieval
-      const fileInfo = {
-        key,
-        size: 0,
-        lastModified: new Date(),
-        contentType: 'application/octet-stream',
-      };
-
-      const response: ApiResponse = {
-        success: true,
-        data: fileInfo,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Generate presigned upload URL (simple upload)
-   */
-  generateUploadUrl = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        throw new CustomError('User not authenticated', 401);
-      }
-
-      const { type, filename, contentType, size } = req.body;
-
-      if (!type || !filename || !contentType || !size) {
-        throw new CustomError('Missing required fields', 400);
-      }
-
-      // Generate unique key
-      const key = `${type}s/${userId}/${Date.now()}_${filename}`;
-
-      // TODO: Implement presigned URL generation
-      const uploadUrl = `https://r2.example.com/upload/${key}`;
-
-      const response: ApiResponse = {
-        success: true,
-        data: {
-          uploadUrl,
-          key,
-          expiresIn: 3600,
+      logger.error('Abort chunked upload error:', error);
+      const response: ApiResponse<null> = {
+        success: false,
+        error: {
+          message: error instanceof CustomError ? error.message : 'Failed to abort chunked upload',
         },
       };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
+      res.status(error instanceof CustomError ? error.statusCode : 500).json(response);
     }
-  };
+  }
 
-  /**
-   * Generate presigned download URL
-   */
-  generateDownloadUrl = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { key } = req.params;
-      const { expiresIn = 3600 } = req.query;
+  // HLS methods removed
 
-      if (!key) {
-        throw new CustomError('File key is required', 400);
-      }
-
-      // TODO: Implement presigned download URL generation
-      const downloadUrl = `https://r2.example.com/download/${key}`;
-
-      const response: ApiResponse = {
-        success: true,
-        data: {
-          downloadUrl,
-          expiresIn: parseInt(expiresIn as string),
-        },
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
 }

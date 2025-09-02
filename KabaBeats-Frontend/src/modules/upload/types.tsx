@@ -2,6 +2,7 @@ export interface BeatFormData {
   title: string;
   audioFile: File | null;
   artwork: File | null;
+  stemsFile: File | null;
   bpm: string;
   key: string;
   genre: string;
@@ -18,6 +19,7 @@ export const DEFAULT_FORM_DATA: BeatFormData = {
   title: "",
   audioFile: null,
   artwork: null,
+  stemsFile: null,
   bpm: "",
   key: "",
   genre: "",
@@ -28,6 +30,4 @@ export const DEFAULT_FORM_DATA: BeatFormData = {
   collaborators: []
 };
 
-export const GENRES = ["Hip Hop", "Trap", "R&B", "Pop", "LoFi", "EDM", "Drill", "Afrobeat", "Jazz", "Ambient"];
-export const MOODS = ["Chill", "Energetic", "Dark", "Happy", "Sad", "Aggressive", "Romantic", "Mysterious"];
-export const KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+// Constants are now imported from ./constants.ts

@@ -11,7 +11,7 @@ import { ReviewStep } from '@/modules/upload/components/ReviewStep';
 import { ProgressStep } from '@/modules/upload/components/ProgressStep';
 import { BeatFormData, DEFAULT_FORM_DATA } from '@/modules/upload/types';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { Beat } from './mockBeats';
+import type { Beat } from '@/interface-types/media-player';
 
 interface EditBeatDialogProps {
   open: boolean;
@@ -26,14 +26,14 @@ function mapBeatToFormData(beat: Beat | null): BeatFormData {
     ...DEFAULT_FORM_DATA,
     title: beat.title,
     bpm: String(beat.bpm),
-    key: beat.key.split(' ')[0],
+    key: beat.key?.split(' ')[0] || '',
     genre: beat.genre,
-    description: '',
-    mood: '',
-    tags: [],
+    description: beat.description || '',
+    mood: beat.mood || '',
+    tags: beat.tags || [],
     audioFile: null,
     artwork: null, // Could attempt to fetch and convert but not needed for edit metadata
-    allowFreeDownload: false,
+    allowFreeDownload: beat.allowFreeDownload || false,
     collaborators: []
   };
 }
@@ -65,11 +65,16 @@ export function EditBeatDialog({ open, onOpenChange, beat, onSave }: EditBeatDia
   const handleSave = () => {
     if (!beat) return;
     onSave({
+      _id: beat._id,
       id: beat.id,
       title: formData.title || beat.title,
       bpm: Number(formData.bpm) || beat.bpm,
       key: formData.key ? `${formData.key} Minor` : beat.key,
       genre: formData.genre || beat.genre,
+      description: formData.description || beat.description,
+      mood: formData.mood || beat.mood,
+      tags: formData.tags || beat.tags,
+      allowFreeDownload: formData.allowFreeDownload !== undefined ? formData.allowFreeDownload : beat.allowFreeDownload,
     });
     onOpenChange(false);
   };

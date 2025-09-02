@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '@/utils/auth';
 import { CustomError } from '@/utils/errorHandler';
-import { UserProfile } from '@/modules/user/user.model';
+import { User } from '@/modules/auth/auth.model';
 import { logger } from '@/config/logger';
 
 export interface AuthRequest extends Request {
@@ -31,7 +31,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const decoded = verifyToken(token);
     
     // Get user from database to ensure they still exist and are active
-    const user = await UserProfile.findById(decoded.userId);
+    const user = await User.findById(decoded.userId);
     if (!user) {
       throw new CustomError('User not found', 401);
     }
@@ -78,7 +78,7 @@ export const optionalAuthMiddleware = async (req: AuthRequest, res: Response, ne
     const decoded = verifyToken(token);
     
     // Get user from database
-    const user = await UserProfile.findById(decoded.userId);
+    const user = await User.findById(decoded.userId);
     if (user && user.isActive) {
       req.user = {
         _id: user._id.toString(),
@@ -126,3 +126,6 @@ export const producerMiddleware = async (req: AuthRequest, res: Response, next: 
     next(error);
   }
 };
+
+// Alias for backward compatibility
+export const authenticateToken = authMiddleware;

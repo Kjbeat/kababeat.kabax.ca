@@ -44,36 +44,31 @@ export class AuthController implements IAuthController {
 
   googleCallback = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { code, state, username, country, themePreferences } = req.query;
+      const { code, state } = req.query;
       
       logger.info('Google OAuth callback received query params:', {
         code: code ? 'present' : 'missing',
-        state: state ? 'present' : 'missing',
-        username,
-        country,
-        themePreferences: themePreferences ? 'present' : 'missing'
+        state: state ? 'present' : 'missing'
       });
       
       if (!code) {
         throw new CustomError('Authorization code not provided', 400);
       }
 
-      // Parse OAuth data if provided
+      // Parse OAuth data from state parameter
       let oauthData: { username?: string; country?: string; themePreferences?: any } = {};
       
-      if (username) {
-        oauthData.username = username as string;
-      }
-      
-      if (country) {
-        oauthData.country = country as string;
-      }
-      
-      if (themePreferences) {
+      if (state) {
         try {
-          oauthData.themePreferences = JSON.parse(themePreferences as string);
+          const stateData = JSON.parse(decodeURIComponent(state as string));
+          oauthData = {
+            username: stateData.username,
+            country: stateData.country,
+            themePreferences: stateData.themePreferences
+          };
+          logger.info('Parsed OAuth data from state:', oauthData);
         } catch (error) {
-          logger.warn('Failed to parse theme preferences from OAuth callback:', error);
+          logger.warn('Failed to parse state parameter from OAuth callback:', error);
         }
       }
 

@@ -1,8 +1,7 @@
 import { Request } from 'express';
-import { IBeat, BeatFilters, SearchOptions, PaginatedResult } from '@/types';
+import { IBeat } from './beat.model';
 
-// Request interfaces
-export interface BeatRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
     email: string;
@@ -10,116 +9,120 @@ export interface BeatRequest extends Request {
   };
 }
 
-// Beat service interfaces
-export interface CreateBeatData {
+export interface CreateBeatRequest {
   title: string;
-  description?: string;
   producer: string;
-  artwork?: string;
-  audioFile: string;
-  bpm: number;
-  musicalKey: string;
-  genre: string;
-  tags?: string[];
-  price: number;
-  salePrice?: number;
-  isExclusive?: boolean;
-  licenseTypes?: {
-    free?: boolean;
-    mp3?: boolean;
-    wav?: boolean;
-    stems?: boolean;
-    exclusive?: boolean;
-  };
-  metadata: {
-    duration: number;
-    fileSize: number;
-    format: string;
-    sampleRate: number;
-    bitRate: number;
-  };
-}
-
-export interface UpdateBeatData {
-  title?: string;
   description?: string;
-  artwork?: string;
-  bpm?: number;
-  musicalKey?: string;
-  genre?: string;
+  bpm: number;
+  key: string;
+  genre: string;
+  mood?: string;
   tags?: string[];
-  price?: number;
-  salePrice?: number;
-  isExclusive?: boolean;
-  licenseTypes?: {
-    free?: boolean;
-    mp3?: boolean;
-    wav?: boolean;
-    stems?: boolean;
-    exclusive?: boolean;
-  };
-  isPublished?: boolean;
-  isDraft?: boolean;
+  allowFreeDownload?: boolean;
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
+  collaborators?: {
+    userId?: string;
+    name: string;
+    email: string;
+    percent: number;
+    role?: string;
+  }[];
+  scheduledDate?: Date;
 }
 
-export interface BeatSearchOptions extends SearchOptions {
-  producerId?: string | undefined;
-  isPublished?: boolean | undefined;
-  isExclusive?: boolean | undefined;
+export interface UpdateBeatRequest {
+  title?: string;
+  producer?: string;
+  description?: string;
+  bpm?: number;
+  key?: string;
+  genre?: string;
+  mood?: string;
+  tags?: string[];
+  allowFreeDownload?: boolean;
+  collaborators?: {
+    userId?: string;
+    name: string;
+    email: string;
+    percent: number;
+    role?: string;
+  }[];
+  scheduledDate?: Date;
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
+}
+
+export interface BeatQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  genre?: string;
+  mood?: string;
+  key?: string;
+  minBPM?: number;
+  maxBPM?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: 'newest' | 'oldest' | 'price-low' | 'price-high' | 'popular' | 'plays' | 'likes';
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
+  owner?: string;
+}
+
+export interface BeatResponse {
+  success: boolean;
+  data?: IBeat | IBeat[];
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }
 
 export interface BeatStats {
   totalBeats: number;
+  publishedBeats: number;
+  draftBeats: number;
+  scheduledBeats: number;
   totalPlays: number;
   totalLikes: number;
   totalDownloads: number;
+  totalSales: number;
   totalRevenue: number;
-  averagePrice: number;
-  topGenres: Array<{ genre: string; count: number }>;
-  topKeys: Array<{ key: string; count: number }>;
 }
 
-// Beat service methods interface
 export interface IBeatService {
-  createBeat(producerId: string, data: CreateBeatData): Promise<IBeat>;
-  getBeatById(beatId: string): Promise<IBeat>;
-  getBeatByIdPublic(beatId: string): Promise<IBeat>;
-  updateBeat(beatId: string, producerId: string, data: UpdateBeatData): Promise<IBeat>;
-  deleteBeat(beatId: string, producerId: string): Promise<void>;
-  getBeatsByProducer(producerId: string, options: BeatSearchOptions): Promise<PaginatedResult<IBeat>>;
-  searchBeats(options: BeatSearchOptions): Promise<PaginatedResult<IBeat>>;
-  getFeaturedBeats(limit?: number): Promise<IBeat[]>;
-  getTrendingBeats(limit?: number): Promise<IBeat[]>;
-  getNewestBeats(limit?: number): Promise<IBeat[]>;
-  getRelatedBeats(beatId: string, limit?: number): Promise<IBeat[]>;
+  createBeat(userId: string, beatData: CreateBeatRequest, audioFile: Express.Multer.File, artworkFile?: Express.Multer.File, stemsFile?: Express.Multer.File): Promise<BeatResponse>;
+  getBeatById(beatId: string): Promise<BeatResponse>;
+  getBeats(queryParams: BeatQueryParams): Promise<BeatResponse>;
+  getUserBeats(userId: string, queryParams: BeatQueryParams): Promise<BeatResponse>;
+  updateBeat(beatId: string, userId: string, updateData: UpdateBeatRequest): Promise<BeatResponse>;
+  deleteBeat(beatId: string, userId: string): Promise<BeatResponse>;
+  publishBeat(beatId: string, userId: string): Promise<BeatResponse>;
+  unpublishBeat(beatId: string, userId: string): Promise<BeatResponse>;
+  scheduleBeat(beatId: string, userId: string, scheduledDate: Date): Promise<BeatResponse>;
+  getBeatStats(userId: string): Promise<BeatStats>;
   incrementPlays(beatId: string): Promise<void>;
   incrementLikes(beatId: string): Promise<void>;
   incrementDownloads(beatId: string): Promise<void>;
-  incrementShares(beatId: string): Promise<void>;
-  publishBeat(beatId: string, producerId: string): Promise<IBeat>;
-  unpublishBeat(beatId: string, producerId: string): Promise<IBeat>;
-  getBeatStats(producerId?: string): Promise<BeatStats>;
-  getBeatAnalytics(beatId: string, producerId: string): Promise<any>;
+  incrementSales(beatId: string): Promise<void>;
+  searchBeats(query: string, filters?: Partial<BeatQueryParams>): Promise<BeatResponse>;
 }
 
-// Beat controller methods interface
 export interface IBeatController {
-  createBeat(req: BeatRequest, res: any, next: any): Promise<void>;
-  getBeatById(req: BeatRequest, res: any, next: any): Promise<void>;
-  updateBeat(req: BeatRequest, res: any, next: any): Promise<void>;
-  deleteBeat(req: BeatRequest, res: any, next: any): Promise<void>;
-  getMyBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  searchBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  getFeaturedBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  getTrendingBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  getNewestBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  getRelatedBeats(req: BeatRequest, res: any, next: any): Promise<void>;
-  incrementPlays(req: BeatRequest, res: any, next: any): Promise<void>;
-  incrementLikes(req: BeatRequest, res: any, next: any): Promise<void>;
-  incrementDownloads(req: BeatRequest, res: any, next: any): Promise<void>;
-  incrementShares(req: BeatRequest, res: any, next: any): Promise<void>;
-  publishBeat(req: BeatRequest, res: any, next: any): Promise<void>;
-  unpublishBeat(req: BeatRequest, res: any, next: any): Promise<void>;
-  getBeatStats(req: BeatRequest, res: any, next: any): Promise<void>;
-  getBeatAnalytics(req: BeatRequest, res: any, next: any): Promise<void>;
+  createBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  getBeatById(req: Request, res: any): Promise<void>;
+  getBeats(req: Request, res: any): Promise<void>;
+  getUserBeats(req: AuthenticatedRequest, res: any): Promise<void>;
+  updateBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  deleteBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  publishBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  unpublishBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  scheduleBeat(req: AuthenticatedRequest, res: any): Promise<void>;
+  getBeatStats(req: AuthenticatedRequest, res: any): Promise<void>;
+  incrementPlays(req: Request, res: any): Promise<void>;
+  incrementLikes(req: Request, res: any): Promise<void>;
+  incrementDownloads(req: Request, res: any): Promise<void>;
+  incrementSales(req: Request, res: any): Promise<void>;
+  searchBeats(req: Request, res: any): Promise<void>;
 }

@@ -1,13 +1,17 @@
+// Load environment variables FIRST
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { createServer } from 'http';
 
 import { connectDatabase } from '@/config/database';
 import { logger } from '@/config/logger';
+import { initializeRedis, shutdownRedis } from '@/config/redis';
 import { errorHandler } from '@/utils/errorHandler';
 import { notFoundHandler } from '@/utils/notFoundHandler';
 
@@ -15,14 +19,13 @@ import { notFoundHandler } from '@/utils/notFoundHandler';
 import authRoutes from '@/routes/v1/auth.routes';
 import userRoutes from '@/routes/v1/user.routes';
 import beatRoutes from '@/routes/v1/beat.routes';
+import licenseRoutes from '@/routes/v1/license.routes';
 import playlistRoutes from '@/routes/v1/playlist.routes';
 import mediaRoutes from '@/routes/v1/media.routes';
 import browseRoutes from '@/routes/v1/browse.routes';
 import connectionRoutes from '@/routes/v1/connection.routes';
 import creatorRoutes from '@/routes/v1/creator.routes';
-
-// Load environment variables
-dotenv.config();
+import userLicenseSettingsRoutes from '@/routes/v1/userLicenseSettings.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -68,11 +71,13 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/beats', beatRoutes);
+app.use('/api/v1/licenses', licenseRoutes);
 app.use('/api/v1/playlists', playlistRoutes);
 app.use('/api/v1/media', mediaRoutes);
 app.use('/api/v1/browse', browseRoutes);
 app.use('/api/v1/connections', connectionRoutes);
 app.use('/api/v1/creators', creatorRoutes);
+app.use('/api/v1/user-license-settings', userLicenseSettingsRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
@@ -83,6 +88,9 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDatabase();
+    
+    // Initialize Redis
+    await initializeRedis();
     
     // GraphQL setup temporarily disabled - will be implemented later
     // const graphqlServer = await createGraphQLServer();
@@ -104,13 +112,15 @@ const startServer = async () => {
 };
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  await shutdownRedis();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  await shutdownRedis();
   process.exit(0);
 });
 

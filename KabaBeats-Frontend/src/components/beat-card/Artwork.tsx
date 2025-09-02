@@ -5,14 +5,13 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LicenseDialog } from "./LicenseDialog";
 
 interface LicenseOption {
   value: string;
   label: string;
-  price: number; // 0 indicates free download
-  description?: string;
+  price: number;
+  description: string;
 }
 
 interface ArtworkProps {
@@ -30,6 +29,10 @@ interface ArtworkProps {
   inCart?: boolean;
   onAddToCart?: () => void;
   hidePrice?: boolean;
+  allowFreeDownload?: boolean;
+  hlsUrl?: string;
+  hlsProcessed?: boolean;
+  onDownload?: (licenseType: string) => void;
 }
 
 export function Artwork({ 
@@ -46,14 +49,17 @@ export function Artwork({
   originalPrice, 
   inCart, 
   onAddToCart,
-  hidePrice
+  hidePrice,
+  allowFreeDownload,
+  hlsUrl,
+  hlsProcessed,
+  onDownload
 }: ArtworkProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { state: playerState } = useMediaPlayer();
   const [open, setOpen] = useState(false);
-  const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   
   // Use the prop value if provided explicitly, otherwise detect from player state
   const actuallyPlaying = isPlaying !== undefined ? isPlaying : (playerState.currentBeat?.id === id && playerState.isPlaying);
@@ -102,28 +108,49 @@ export function Artwork({
   };
 
   const handleAdd = () => {
-    // Open license dialog instead of immediate add
-    setOpen(true);
+    if (hidePrice) return;
+    
+    if (exclusive) {
+      // For exclusive beats, show license options
+      setOpen(true);
+    } else {
+      // For non-exclusive beats, add directly to cart
+      addToCart({
+        id,
+        title,
+        producer,
+        artwork,
+        price: price || 0,
+        licenseType: 'MP3'
+      });
+      toast({
+        title: "Added to cart",
+        description: `${title} by ${producer} has been added to your cart.`,
+      });
+    }
   };
 
-  const confirmAdd = () => {
-    if (!selectedLicense) {
-      toast({ title: "Choose a license", description: "Select a license type to continue." });
-      return;
-    }
-    const license = licenseOptions.find(l => l.value === selectedLicense);
-    if (!license) return;
-    if (license.price === 0) {
-      toast({ title: "Free download", description: "Your free download is starting..." });
-      // TODO: implement actual free download logic
-      setOpen(false);
-      return;
-    }
-    const finalPrice = license.price;
-    addToCart({ id, title, producer, artwork, price: finalPrice, licenseType: license.value });
-    toast({ title: "Added to cart", description: `${title} (${license.label}) added.` });
+  const handleConfirmLicense = (licenseType: string) => {
+    // Add to cart with selected license
+    addToCart({
+      id,
+      title,
+      producer,
+      artwork,
+      price: price || 0,
+      licenseType: licenseType
+    });
+    toast({
+      title: "Added to cart",
+      description: `${title} by ${producer} (${licenseType}) has been added to your cart.`,
+    });
     setOpen(false);
-    if (onAddToCart) onAddToCart();
+  };
+
+  const handleDownload = (licenseType: string) => {
+    if (onDownload) {
+      onDownload(licenseType);
+    }
   };
 
   return (
@@ -203,46 +230,15 @@ export function Artwork({
       </Button>
 
       {/* License Selection Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select License</DialogTitle>
-            <DialogDescription>Choose the license you want before adding to cart or free download.</DialogDescription>
-          </DialogHeader>
-    <div className="space-y-4 py-3">
-            <ToggleGroup type="single" value={selectedLicense || ''} onValueChange={(v) => v && setSelectedLicense(v)} className="flex flex-col gap-2 items-stretch">
-              {licenseOptions.map(opt => (
-                <ToggleGroupItem
-                  key={opt.value}
-                  value={opt.value}
-                  aria-label={opt.label}
-      className={`flex justify-between items-center w-full px-4 py-2.5 rounded-md border text-left ${selectedLicense === opt.value ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 hover:bg-muted/70'} transition-colors`}
-                >
-                  <div className="flex flex-col text-xs">
-                    <span className="font-semibold text-[13px] leading-tight">{opt.label}</span>
-                    {opt.description && <span className="text-[10px] opacity-70 mt-0.5">{opt.description}</span>}
-                  </div>
-                  <div className="text-[11px] font-medium">{opt.price === 0 ? 'FREE' : `$${opt.price.toFixed(2)}`}</div>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            {selectedLicense && (
-              <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-3">
-                <p className="text-xs font-medium mb-1">What's included:</p>
-                <ul className="text-[10px] leading-relaxed grid gap-1 list-disc pl-4">
-                  {licenseDetails[selectedLicense]?.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="mt-2 flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={confirmAdd} disabled={!selectedLicense}>Confirm</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LicenseDialog
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        beatId={id}
+        beatTitle={title}
+        beatPrice={price || 0}
+        onDownload={handleDownload}
+        onAddToCart={handleConfirmLicense}
+      />
     </div>
   );
 }

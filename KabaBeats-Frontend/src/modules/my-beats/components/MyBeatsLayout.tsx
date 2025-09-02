@@ -9,110 +9,210 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PageHeader, EmptyState } from "@/components/shared";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { generateMockBeats, Beat } from "./mockBeats";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EditBeatDialog } from "./EditBeatDialog";
 import { useNavigate } from "react-router-dom";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Beat } from "@/interface-types/media-player";
+import { getArtworkUrl } from "@/utils/artwork";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+
+// Component for displaying artwork using public URLs
+function ArtworkImage({ artwork, title, className }: { artwork?: string; title: string; className?: string }) {
+  return (
+    <img 
+      src={getArtworkUrl(artwork)} 
+      alt={title}
+      className={className}
+      loading="lazy"
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "/placeholder.svg";
+      }}
+    />
+  );
+}
 
 export function MyBeatsLayout() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [beats, setBeats] = useState<Beat[]>(() => generateMockBeats(40, 1));
+  const [beats, setBeats] = useState<Beat[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editOpen, setEditOpen] = useState(false);
   const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
   const navigate = useNavigate();
   const { playBeat } = useMediaPlayer();
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const { user, accessToken } = useAuth();
 
-  // Derived filtered beats
-  const filteredBeats = beats.filter(beat => {
-    const matchesSearch = beat.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === "all" || beat.status.toLowerCase() === activeTab;
-    return matchesSearch && matchesTab;
-  });
-
-  // Pagination derived values
-  const totalPages = Math.max(1, Math.ceil(filteredBeats.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * pageSize;
-  const pageEnd = pageStart + pageSize;
-  const visibleBeats = filteredBeats.slice(pageStart, pageEnd);
-
-  // Ensure page resets when filters change
-  useEffect(() => { setPage(1); }, [searchTerm, activeTab, pageSize]);
-
-  // Infinite scroll: when we reach bottom AND the user is on last page (of current data), generate more
-  const generateMore = useCallback(() => {
-    if (isGenerating) return;
-    setIsGenerating(true);
-    // Simulate async delay
-    setTimeout(() => {
-      setBeats(prev => {
-        const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
-        const extra = generateMockBeats(30, nextId);
-        return [...prev, ...extra];
+  // Fetch beats from API
+  const fetchBeats = useCallback(async (pageNum: number = 1, reset: boolean = false) => {
+    if (!accessToken) return;
+    
+    try {
+      setIsLoading(true);
+      console.log('Fetching beats for user:', user?.id);
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: pageSize.toString(),
+        owner: user.id,
+        ...(searchTerm && { search: searchTerm }),
+        ...(activeTab !== "all" && { status: activeTab })
       });
+      
+      console.log('API request params:', params.toString());
+
+      const response = await fetch(`${API_BASE_URL}/beats?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch beats');
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+      
+      // Handle the correct response structure
+      const beats = Array.isArray(data.data) ? data.data : (data.data?.beats || []);
+      const pagination = data.pagination || data.data?.pagination || {};
+      
+      if (reset) {
+        setBeats(beats);
+      } else {
+        setBeats(prev => [...prev, ...beats]);
+      }
+      
+      setCurrentPage(pagination.page || pagination.currentPage || 1);
+      setTotalPages(pagination.pages || pagination.totalPages || 1);
+    } catch (error) {
+      console.error('Error fetching beats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your beats. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken, user?.id, pageSize, searchTerm, activeTab, toast]);
+
+  // Derived filtered beats (now just use the API data directly)
+  const filteredBeats = beats;
+
+  // Initial data load
+  useEffect(() => {
+    if (accessToken) {
+      fetchBeats(1, true);
+    }
+  }, [accessToken, fetchBeats]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    if (accessToken) {
+      fetchBeats(1, true);
+    }
+  }, [searchTerm, activeTab, pageSize, accessToken, fetchBeats]);
+
+  // Load more beats when scrolling to bottom
+  const loadMore = useCallback(() => {
+    if (isGenerating || currentPage >= totalPages) return;
+    setIsGenerating(true);
+    fetchBeats(currentPage + 1, false).finally(() => {
       setIsGenerating(false);
-    }, 400);
-  }, [isGenerating]);
+    });
+  }, [isGenerating, currentPage, totalPages, fetchBeats]);
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        const onLastPage = currentPage === Math.ceil(filteredBeats.length / pageSize);
-        if (entry.isIntersecting && onLastPage) {
-          generateMore();
+        if (entry.isIntersecting && currentPage < totalPages) {
+          loadMore();
         }
       });
     }, { root: null, threshold: 0.1 });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [currentPage, filteredBeats.length, pageSize, generateMore]);
+  }, [currentPage, totalPages, loadMore]);
 
   const getStatusBadge = (status: string) => {
-    const variant = status === "Published" ? "default" : status === "Draft" ? "secondary" : "outline";
+    const variant = status === "published" ? "default" : status === "draft" ? "secondary" : "outline";
     return <Badge variant={variant}>{status}</Badge>;
   };
 
-  const goToPage = (p: number) => {
-    setPage(Math.min(Math.max(1, p), totalPages));
-  };
-
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
-  const allVisibleSelected = visibleBeats.length > 0 && visibleBeats.every(b => selectedIds.has(b.id));
+  
+  const allVisibleSelected = filteredBeats.length > 0 && filteredBeats.every(b => selectedIds.has(b._id || b.id));
   const toggleSelectAllVisible = () => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (allVisibleSelected) {
-        visibleBeats.forEach(b => next.delete(b.id));
+        filteredBeats.forEach(b => next.delete(b._id || b.id));
       } else {
-        visibleBeats.forEach(b => next.add(b.id));
+        filteredBeats.forEach(b => next.add(b._id || b.id));
       }
       return next;
     });
   };
-  const deleteBeats = (ids: number[]) => {
-    setBeats(prev => prev.filter(b => !ids.includes(b.id)));
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.delete(id));
-      return next;
-    });
+
+  const deleteBeats = async (ids: string[]) => {
+    if (!accessToken) return;
+    
+    try {
+      const deletePromises = ids.map(id => 
+        fetch(`${API_BASE_URL}/beats/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      await Promise.all(deletePromises);
+      
+      // Remove deleted beats from state
+      setBeats(prev => prev.filter(b => !ids.includes(b._id || b.id)));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
+
+      toast({
+        title: "Success",
+        description: `${ids.length} beat(s) deleted successfully.`,
+      });
+    } catch (error) {
+      console.error('Error deleting beats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete beats. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   const handleEdit = (beat: Beat) => {
     // Defer opening the modal until after the dropdown menu has fully closed.
@@ -121,27 +221,78 @@ export function MyBeatsLayout() {
     setEditingBeat(beat);
     setTimeout(() => setEditOpen(true), 0);
   };
-  const handleEditSave = (updated: Partial<Beat>) => {
-    setBeats(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } as Beat : b));
+
+  const handleEditSave = async (updated: Partial<Beat>) => {
+    if (!accessToken || !editingBeat) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/beats/${editingBeat._id || editingBeat.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updated)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update beat');
+      }
+
+      const data = await response.json();
+      
+      // Update the beat in state
+      setBeats(prev => prev.map(b => 
+        (b._id || b.id) === (editingBeat._id || editingBeat.id) 
+          ? { ...b, ...data.data } 
+          : b
+      ));
+
+      toast({
+        title: "Success",
+        description: "Beat updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating beat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update beat. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
   const handleView = (beat: Beat) => {
     // Navigate to beat page (assumed route pattern /beats/:id)
-    navigate(`/beats/${beat.id}`);
+    navigate(`/beats/${beat._id || beat.id}`);
   };
 
   const handleRowClick = (beat: Beat) => (e: React.MouseEvent) => {
     // Prevent triggering when clicking interactive controls
     const target = e.target as HTMLElement;
     if (target.closest('button, a, input, [role="menu"], [role="checkbox"], [data-no-row-play]')) return;
-    playBeat({
-      id: beat.id.toString(),
+    
+    // Use direct public URLs for artwork and audio
+    const artworkUrl = getArtworkUrl(beat.artwork);
+    const audioUrl = beat.storageKey ? `https://pub-6f3847c4d3f4471284d44c6913bcf6f0.r2.dev/${beat.storageKey}` : undefined;
+    
+    console.log('Playing beat:', {
+      id: (beat._id || beat.id).toString(),
       title: beat.title,
-      producer: "You", // placeholder until producer data available
-      artwork: beat.artwork,
+      audioUrl: audioUrl,
+      storageKey: beat.storageKey
+    });
+    
+    playBeat({
+      id: (beat._id || beat.id).toString(),
+      title: beat.title,
+      producer: beat.producer || "You",
+      artwork: artworkUrl,
       bpm: beat.bpm,
       key: beat.key,
       genre: beat.genre,
-      price: 0,
+      price: beat.salePrice || beat.basePrice || 0,
+      audioUrl: audioUrl
     });
   };
 
@@ -173,7 +324,14 @@ export function MyBeatsLayout() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
-          {filteredBeats.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading your beats...</p>
+              </div>
+            </div>
+          ) : filteredBeats.length === 0 ? (
             <EmptyState
               title={t('myBeats.noBeatsFound')}
               description={searchTerm ? t('myBeats.noBeatsMatchSearch') : t('myBeats.haventUploadedYet')}
@@ -211,13 +369,7 @@ export function MyBeatsLayout() {
                     </Select>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="h-8 w-8">
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
                     <div className="px-2 text-sm tabular-nums">{currentPage} / {totalPages}</div>
-                    <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} className="h-8 w-8">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -241,26 +393,26 @@ export function MyBeatsLayout() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleBeats.map((beat) => {
-                    const selected = selectedIds.has(beat.id);
+                  {filteredBeats.map((beat) => {
+                    const beatId = beat._id || beat.id;
+                    const selected = selectedIds.has(beatId);
                     return (
                     <TableRow 
-                      key={beat.id}
+                      key={beatId}
                       data-selected={selected || undefined}
                       className={`hover:bg-muted/50 ${selected ? 'bg-muted/70' : ''} cursor-pointer`}
                       onClick={handleRowClick(beat)}
                       title={t('myBeats.clickToPlay')}
                     >
                       <TableCell className="w-10">
-                        <Checkbox checked={selected} onCheckedChange={() => toggleSelect(beat.id)} aria-label={t('myBeats.selectBeat')} />
+                        <Checkbox checked={selected} onCheckedChange={() => toggleSelect(beatId)} aria-label={t('myBeats.selectBeat')} />
                       </TableCell>
                       <TableCell>
                         <div className="w-14 h-14 rounded overflow-hidden bg-muted flex items-center justify-center">
-                          <img 
-                            src={beat.artwork} 
-                            alt={beat.title}
+                          <ArtworkImage 
+                            artwork={beat.artwork}
+                            title={beat.title}
                             className="w-full h-full object-cover object-center"
-                            loading="lazy"
                           />
                         </div>
                       </TableCell>
@@ -279,10 +431,10 @@ export function MyBeatsLayout() {
                       <TableCell className="hidden md:table-cell">{beat.bpm}</TableCell>
                       <TableCell className="hidden md:table-cell">{beat.key}</TableCell>
                       <TableCell className="hidden lg:table-cell">{beat.genre}</TableCell>
-                      <TableCell className="hidden xl:table-cell">{new Date(beat.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="hidden xl:table-cell">{new Date(beat.uploadDate || beat.date).toLocaleDateString()}</TableCell>
                       <TableCell className="hidden sm:table-cell">{getStatusBadge(beat.status)}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{beat.streams.toLocaleString()}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{beat.sales}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{beat.plays?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{beat.sales || 0}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -299,7 +451,7 @@ export function MyBeatsLayout() {
                               <Edit className="h-4 w-4 mr-2" />
                               {t('myBeats.edit')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => deleteBeats([beat.id])} className="text-destructive focus:text-destructive">
+                            <DropdownMenuItem onSelect={() => deleteBeats([beatId])} className="text-destructive focus:text-destructive">
                               <Trash2 className="h-4 w-4 mr-2" />
                               {t('myBeats.delete')}
                             </DropdownMenuItem>
@@ -326,18 +478,13 @@ export function MyBeatsLayout() {
               <div className="flex items-center justify-between px-4 py-3 gap-4 flex-wrap border-t">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {t('myBeats.showingResults')
-                    .replace('{showing}', Math.min(pageEnd, filteredBeats.length).toString())
+                    .replace('{showing}', filteredBeats.length.toString())
                     .replace('{total}', filteredBeats.length.toLocaleString())}
                   {isGenerating && <span className="animate-pulse"> • {t('myBeats.loadingMore')}</span>}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="h-8 w-8">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
                   <div className="px-2 text-sm tabular-nums">{currentPage} / {totalPages}</div>
-                  <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} className="h-8 w-8">
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  {isGenerating && <span className="text-xs text-muted-foreground">Loading more...</span>}
                 </div>
               </div>
               {/* Sentinel for infinite scroll */}

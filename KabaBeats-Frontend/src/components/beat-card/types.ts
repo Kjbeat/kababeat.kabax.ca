@@ -15,7 +15,14 @@ export interface BeatCardProps {
   inCart?: boolean;
   /** Optional sale price to show discount */
   salePrice?: number;
+  /** Whether free download is allowed */
+  allowFreeDownload?: boolean;
+  /** HLS streaming URL */
+  hlsUrl?: string;
+  /** Whether HLS is processed and available */
+  hlsProcessed?: boolean;
   onPlay?: () => void;
   onLike?: () => void;
   onAddToCart?: () => void;
+  onDownload?: (licenseType: string) => void;
 }
