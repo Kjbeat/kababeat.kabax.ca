@@ -81,6 +81,9 @@ const translations = {
     'theme.uganda': 'Uganda',
     'theme.tanzania': 'Tanzania',
     'theme.rwanda': 'Rwanda',
+    'theme.defaultTheme': 'Default Theme',
+    'theme.defaultThemeDescription': 'Platform\'s normal colors',
+    'theme.autoUpdatesWithMode': 'Auto-updates with theme mode',
     
     // Landing Page
     'landing.hero.title': 'KABABEATS',
@@ -2156,6 +2159,9 @@ const translations = {
     'theme.uganda': 'Ouganda',
     'theme.tanzania': 'Tanzanie',
     'theme.rwanda': 'Rwanda',
+    'theme.defaultTheme': 'Thème par Défaut',
+    'theme.defaultThemeDescription': 'Couleurs normales de la plateforme',
+    'theme.autoUpdatesWithMode': 'Se met à jour automatiquement avec le mode',
     
     // Landing Page
     'landing.hero.title': 'KABABEATS',

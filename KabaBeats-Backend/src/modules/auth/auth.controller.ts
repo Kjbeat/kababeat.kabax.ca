@@ -42,30 +42,42 @@ export class AuthController implements IAuthController {
     }
   };
 
-  loginWithGoogle = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const result = await this.authService.loginWithGoogle(req.body);
-      
-      const response: ApiResponse = {
-        success: true,
-        data: result,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
   googleCallback = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { code, state } = req.query;
+      const { code, state, username, country, themePreferences } = req.query;
+      
+      logger.info('Google OAuth callback received query params:', {
+        code: code ? 'present' : 'missing',
+        state: state ? 'present' : 'missing',
+        username,
+        country,
+        themePreferences: themePreferences ? 'present' : 'missing'
+      });
       
       if (!code) {
         throw new CustomError('Authorization code not provided', 400);
       }
 
-      const result = await this.authService.handleGoogleCallback(code as string, state as string);
+      // Parse OAuth data if provided
+      let oauthData: { username?: string; country?: string; themePreferences?: any } = {};
+      
+      if (username) {
+        oauthData.username = username as string;
+      }
+      
+      if (country) {
+        oauthData.country = country as string;
+      }
+      
+      if (themePreferences) {
+        try {
+          oauthData.themePreferences = JSON.parse(themePreferences as string);
+        } catch (error) {
+          logger.warn('Failed to parse theme preferences from OAuth callback:', error);
+        }
+      }
+
+      const result = await this.authService.handleGoogleCallback(code as string, state as string, oauthData);
       
       // Redirect to frontend with tokens
       const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${result.accessToken}&refresh=${result.refreshToken}`;
@@ -156,14 +168,21 @@ export class AuthController implements IAuthController {
         throw new CustomError('Email is required', 400);
       }
 
-      await this.authService.forgotPassword(email);
+      const result = await this.authService.forgotPassword(email);
       
-      const response: ApiResponse = {
-        success: true,
-        data: { message: 'Password reset email sent if account exists' },
-      };
-
-      res.status(200).json(response);
+      if (result.success) {
+        const response: ApiResponse = {
+          success: true,
+          data: { message: result.message },
+        };
+        res.status(200).json(response);
+      } else {
+        const response: ApiResponse = {
+          success: false,
+          data: { message: result.message },
+        };
+        res.status(400).json(response);
+      }
     } catch (error) {
       next(error);
     }
@@ -208,48 +227,6 @@ export class AuthController implements IAuthController {
       const response: ApiResponse = {
         success: true,
         data: { message: 'Password changed successfully' },
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  verifyEmail = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { token } = req.body;
-
-      if (!token) {
-        throw new CustomError('Verification token is required', 400);
-      }
-
-      await this.authService.verifyEmail(token);
-      
-      const response: ApiResponse = {
-        success: true,
-        data: { message: 'Email verified successfully' },
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  resendVerificationEmail = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { email } = req.body;
-
-      if (!email) {
-        throw new CustomError('Email is required', 400);
-      }
-
-      await this.authService.resendVerificationEmail(email);
-      
-      const response: ApiResponse = {
-        success: true,
-        data: { message: 'Verification email sent' },
       };
 
       res.status(200).json(response);

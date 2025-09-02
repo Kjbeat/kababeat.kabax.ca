@@ -11,6 +11,7 @@ export interface AuthRequest extends Request {
 export interface LoginCredentials {
   email: string;
   password: string;
+  country?: string;
 }
 
 export interface RegisterData {
@@ -19,23 +20,6 @@ export interface RegisterData {
   password: string;
   firstName?: string;
   lastName?: string;
-  country?: string;
-  themePreferences?: {
-    mode: 'light' | 'dark' | 'system';
-    customTheme?: {
-      primary: string;
-      accent: string;
-      radius: number;
-    };
-  };
-}
-
-export interface GoogleAuthData {
-  email: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
   country?: string;
   themePreferences?: {
     mode: 'light' | 'dark' | 'system';
@@ -71,24 +55,17 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export interface VerifyEmailRequest {
-  token: string;
-}
-
 // Auth service methods interface
 export interface IAuthService {
   register(data: RegisterData): Promise<AuthResponse>;
   login(credentials: LoginCredentials): Promise<AuthResponse>;
-  loginWithGoogle(data: GoogleAuthData): Promise<AuthResponse>;
   handleGoogleCallback(code: string, state?: string): Promise<{ accessToken: string; refreshToken: string }>;
   refreshToken(refreshToken: string): Promise<AuthResponse>;
   logout(userId: string, refreshToken: string): Promise<void>;
   logoutAll(userId: string): Promise<void>;
-  forgotPassword(email: string): Promise<void>;
+  forgotPassword(email: string): Promise<{ success: boolean; message: string }>;
   resetPassword(token: string, password: string): Promise<void>;
   changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
-  verifyEmail(token: string): Promise<void>;
-  resendVerificationEmail(email: string): Promise<void>;
   getProfile(userId: string): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
   updateProfile(userId: string, data: Partial<IUser>): Promise<Omit<IUser, 'password' | 'refreshTokens'>>;
   deleteAccount(userId: string, password: string): Promise<void>;
@@ -116,7 +93,6 @@ export interface IAuthService {
 export interface IAuthController {
   register(req: AuthRequest, res: any, next: any): Promise<void>;
   login(req: AuthRequest, res: any, next: any): Promise<void>;
-  loginWithGoogle(req: AuthRequest, res: any, next: any): Promise<void>;
   googleCallback(req: AuthRequest, res: any, next: any): Promise<void>;
   refreshToken(req: AuthRequest, res: any, next: any): Promise<void>;
   logout(req: AuthRequest, res: any, next: any): Promise<void>;
@@ -124,8 +100,6 @@ export interface IAuthController {
   forgotPassword(req: AuthRequest, res: any, next: any): Promise<void>;
   resetPassword(req: AuthRequest, res: any, next: any): Promise<void>;
   changePassword(req: AuthRequest, res: any, next: any): Promise<void>;
-  verifyEmail(req: AuthRequest, res: any, next: any): Promise<void>;
-  resendVerificationEmail(req: AuthRequest, res: any, next: any): Promise<void>;
   getProfile(req: AuthRequest, res: any, next: any): Promise<void>;
   updateProfile(req: AuthRequest, res: any, next: any): Promise<void>;
   deleteAccount(req: AuthRequest, res: any, next: any): Promise<void>;

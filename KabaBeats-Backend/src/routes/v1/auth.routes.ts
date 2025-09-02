@@ -28,14 +28,6 @@ const registerSchema = Joi.object({
 const loginSchema = Joi.object({
   email: commonSchemas.email,
   password: Joi.string().required(),
-});
-
-const googleAuthSchema = Joi.object({
-  email: commonSchemas.email,
-  username: commonSchemas.username,
-  firstName: Joi.string().max(50).optional(),
-  lastName: Joi.string().max(50).optional(),
-  avatar: Joi.string().uri().optional(),
   country: Joi.string().max(50).optional(),
 });
 
@@ -55,14 +47,6 @@ const resetPasswordSchema = Joi.object({
 const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required(),
   newPassword: commonSchemas.password,
-});
-
-const verifyEmailSchema = Joi.object({
-  token: Joi.string().required(),
-});
-
-const resendVerificationSchema = Joi.object({
-  email: commonSchemas.email,
 });
 
 const updateProfileSchema = Joi.object({
@@ -105,13 +89,12 @@ const resendOTPSchema = Joi.object({
 // Public routes
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
-router.post('/google', validate(googleAuthSchema), authController.loginWithGoogle);
+
 router.get('/google/callback', authController.googleCallback);
 router.post('/refresh-token', validate(refreshTokenSchema), authController.refreshToken);
 router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
-router.post('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);
-router.post('/resend-verification', validate(resendVerificationSchema), authController.resendVerificationEmail);
+
 router.post('/verify-otp', validate(verifyOTPSchema), authController.verifyEmailOTP);
 router.post('/resend-otp', validate(resendOTPSchema), authController.resendVerificationOTP);
 

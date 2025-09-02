@@ -121,6 +121,34 @@ export function CustomThemeLayout() {
   const [radiusRem, setRadiusRem] = useState<number>(0.75);
   const [selectedPreset, setSelectedPreset] = useState<string>("custom");
 
+  // Get default theme colors based on current theme mode
+  const getDefaultThemeColors = () => {
+    const currentTheme = theme;
+    let effectiveTheme: 'light' | 'dark' = 'dark';
+    
+    if (currentTheme === 'light') {
+      effectiveTheme = 'light';
+    } else if (currentTheme === 'dark') {
+      effectiveTheme = 'dark';
+    } else if (currentTheme === 'system') {
+      // Check system preference
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    
+    return {
+      primary: effectiveTheme === 'dark' ? '#FFFFFF' : '#000000',
+      accent: effectiveTheme === 'dark' ? '#D9D9D9' : '#262626',
+    };
+  };
+
+  // Default theme preset
+  const defaultPreset = {
+    id: "default",
+    name: t('theme.defaultTheme'),
+    ...getDefaultThemeColors(),
+    note: t('theme.defaultThemeDescription')
+  };
+
   // Curated African country color presets (primary + accent sampled from flag palettes)
   const countryPresets: { id: string; name: string; primary: string; accent: string; note?: string }[] = [
     { id: "ng", name: t('theme.nigeria'), primary: "#008751", accent: "#002E1C" },
@@ -152,6 +180,39 @@ export function CustomThemeLayout() {
       if (!Number.isNaN(parsed)) setRadiusRem(parsed);
     }
   }, []);
+
+  // Check if current colors match default theme when theme mode changes
+  useEffect(() => {
+    const defaultColors = getDefaultThemeColors();
+    if (primaryHex === defaultColors.primary && accentHex === defaultColors.accent) {
+      setSelectedPreset('default');
+    }
+  }, [theme, primaryHex, accentHex]);
+
+  // Auto-update colors when theme mode changes and default theme is selected
+  useEffect(() => {
+    if (selectedPreset === 'default') {
+      const defaultColors = getDefaultThemeColors();
+      applyPrimary(defaultColors.primary);
+      applyAccent(defaultColors.accent);
+      
+      // Update backend theme preferences if user is authenticated
+      if (isAuthenticated) {
+        const themePreferences = {
+          mode: theme,
+          customTheme: {
+            primary: defaultColors.primary,
+            accent: defaultColors.accent,
+            radius: radiusRem
+          }
+        };
+        
+        updateThemePreferences(themePreferences).catch(error => {
+          console.error('Failed to update theme preferences:', error);
+        });
+      }
+    }
+  }, [theme, selectedPreset, isAuthenticated, radiusRem, updateThemePreferences]);
 
   const applyPrimary = (hex: string) => {
     const hsl = hexToHslVar(hex);
@@ -375,6 +436,27 @@ export function CustomThemeLayout() {
               <p className="text-xs text-muted-foreground">{t('theme.presetDescription')}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {/* Default Theme Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  const defaultColors = getDefaultThemeColors();
+                  applyPrimary(defaultColors.primary);
+                  applyAccent(defaultColors.accent);
+                  setSelectedPreset('default');
+                }}
+                className={`group relative flex flex-col items-start rounded-md border p-3 text-left transition hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-ring ${selectedPreset === 'default' ? 'ring-2 ring-primary/70 border-primary' : 'border-border'}`}
+              >
+                <div className="flex w-full gap-1 mb-2">
+                  <span className="flex-1 h-6 rounded-sm" style={{ backgroundColor: defaultPreset.primary }} />
+                  <span className="flex-1 h-6 rounded-sm" style={{ backgroundColor: defaultPreset.accent }} />
+                </div>
+                <span className="text-xs font-medium leading-tight">{defaultPreset.name}</span>
+                <span className="mt-1 text-[10px] text-muted-foreground">{defaultPreset.note}</span>
+                <span className="mt-1 text-[10px] text-blue-500 font-medium">{t('theme.autoUpdatesWithMode')}</span>
+                {selectedPreset === 'default' && <span className="absolute bottom-2 right-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">{t('theme.active')}</span>}
+              </button>
+              
               {countryPresets.map(preset => {
                 const active = selectedPreset === preset.id;
                 return (

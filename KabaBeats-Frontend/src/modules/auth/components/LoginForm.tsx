@@ -12,14 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageToggle } from "@/components/LanguageToggle";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -56,31 +49,8 @@ export function LoginForm() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetCode, setResetCode] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [resetLoading, setResetLoading] = useState(false);
 
   const [showLoginPass, setShowLoginPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
-
-  // TODO: Integrate with your auth backend / context
-  const requestResetCode = async (email: string) => {
-    // Example: await api.post('/auth/password/forgot', { email })
-    await new Promise((r) => setTimeout(r, 600));
-  };
-  const verifyResetCode = async (email: string, code: string) => {
-    // Example: await api.post('/auth/password/verify', { email, code })
-    await new Promise((r) => setTimeout(r, 600));
-  };
-  const commitNewPassword = async (email: string, code: string, password: string) => {
-    // Example: await api.post('/auth/password/reset', { email, code, password })
-    await new Promise((r) => setTimeout(r, 600));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,9 +198,9 @@ export function LoginForm() {
                 </div>
               </div>
               <div className="text-right -mt-1">
-                <button type="button" className="text-xs text-primary hover:underline" onClick={() => { setResetOpen(true); setResetStep(1); setResetEmail(""); setResetCode(""); setNewPass(""); setConfirmPass(""); }}>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
                   {t('auth.forgotPassword')}
-                </button>
+                </Link>
               </div>
               
               <Button type="submit" className="w-full" disabled={loading}>
@@ -249,136 +219,7 @@ export function LoginForm() {
           </CardContent>
         </Card>
 
-        <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t('auth.resetYourPassword')}</DialogTitle>
-              <DialogDescription>
-                {resetStep === 1 && t('auth.enterEmailForReset')}
-                {resetStep === 2 && t('auth.checkEmailForCode')}
-                {resetStep === 3 && t('auth.passwordUpdated')}
-              </DialogDescription>
-            </DialogHeader>
 
-            {resetStep === 1 && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">{t('auth.email')}</Label>
-                  <Input id="reset-email" type="email" placeholder="you@example.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} />
-                </div>
-              </div>
-            )}
-
-            {resetStep === 2 && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-code">{t('auth.sixDigitCode')}</Label>
-                  <Input id="reset-code" inputMode="numeric" maxLength={6} placeholder="123456" value={resetCode} onChange={(e) => setResetCode(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-pass">{t('auth.newPassword')}</Label>
-                  <div className="relative">
-                    <Input id="new-pass" type={showNewPass ? "text" : "password"} value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                      onClick={() => setShowNewPass((v) => !v)}
-                      aria-label={showNewPass ? t('auth.hidePassword') : t('auth.showPassword')}
-                    >
-                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-pass">{t('auth.confirmPassword')}</Label>
-                  <div className="relative">
-                    <Input id="confirm-pass" type={showConfirmPass ? "text" : "password"} value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                      onClick={() => setShowConfirmPass((v) => !v)}
-                      aria-label={showConfirmPass ? t('auth.hidePassword') : t('auth.showPassword')}
-                    >
-                      {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {resetStep === 3 && (
-              <div className="text-sm">
-                <div className="rounded-md border p-3 bg-muted/30">{t('auth.passwordUpdatedFor')} <span className="font-medium">{resetEmail}</span>.</div>
-              </div>
-            )}
-
-            <DialogFooter className="flex items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
-                {resetStep < 3 ? (
-                  <>
-                    <span>{t('auth.needHelp')} </span>
-                    <a className="underline" href="/help/security" onClick={(e) => e.stopPropagation()}>{t('auth.securityHelp')}</a>
-                  </>
-                ) : (
-                  <span>{t('auth.allSet')} 🎉</span>
-                )}
-              </div>
-
-              {resetStep === 1 && (
-                <Button
-                  onClick={async () => {
-                    setResetLoading(true);
-                    try {
-                      await requestResetCode(resetEmail);
-                      toast({ title: t('auth.checkYourEmail'), description: t('auth.sentSixDigitCode') });
-                      setResetStep(2);
-                    } catch (e) {
-                      toast({ title: t('auth.couldntSendCode'), description: t('auth.pleaseTryAgain'), variant: "destructive" });
-                    } finally {
-                      setResetLoading(false);
-                    }
-                  }}
-                  disabled={!resetEmail || resetLoading}
-                >
-                  {resetLoading ? t('auth.sending') : t('auth.sendCode')}
-                </Button>
-              )}
-
-              {resetStep === 2 && (
-                <Button
-                  onClick={async () => {
-                    if (!resetCode || newPass.length < 8 || newPass !== confirmPass) {
-                      toast({ title: t('auth.checkTheForm'), description: t('auth.enterCodeAndMatchingPasswords'), variant: "destructive" });
-                      return;
-                    }
-                    setResetLoading(true);
-                    try {
-                      await verifyResetCode(resetEmail, resetCode);
-                      await commitNewPassword(resetEmail, resetCode, newPass);
-                      toast({ title: t('auth.passwordUpdated'), description: t('auth.canSignInWithNewPassword') });
-                      setResetStep(3);
-                    } catch (e) {
-                      toast({ title: t('auth.couldntResetPassword'), description: t('auth.checkCodeAndTryAgain'), variant: "destructive" });
-                    } finally {
-                      setResetLoading(false);
-                    }
-                  }}
-                  disabled={!resetCode || !newPass || !confirmPass || resetLoading}
-                >
-                  {resetLoading ? t('auth.updating') : t('auth.updatePassword')}
-                </Button>
-              )}
-
-              {resetStep === 3 && (
-                <Button onClick={() => { setResetOpen(false); setResetStep(1); }}>{t('auth.close')}</Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

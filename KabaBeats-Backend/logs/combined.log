@@ -906,3 +906,281 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:20:42:2042"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:20:45:2045"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:20:49:2049"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:25:10:2510"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:25:10:2510"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:25:10:2510"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:25:10:2510"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:25:15:2515"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:25:15:2515"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:25:15:2515"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:25:15:2515"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:25:34:2534"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:25:34:2534"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:25:34:2534"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:25:34:2534"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:25:54:2554"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:25:54:2554"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:25:54:2554"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:25:54:2554"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:29:43:2943"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:29:43:2943"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:29:43:2943"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:29:43:2943"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:29:59:2959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:29:59:2959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:29:59:2959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:29:59:2959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:00:320"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:00:320"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:00:320"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:00:320"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:04:324"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:04:324"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:04:324"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:04:324"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:07:327"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:07:327"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:07:327"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:07:327"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:17:3217"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:17:3217"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:17:3217"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:17:3217"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:24:3224"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:24:3224"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:24:3224"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:24:3224"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:28:3228"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:28:3228"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:28:3228"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:28:3228"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:31:3231"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:31:3231"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:31:3231"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:31:3231"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:35:3235"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:35:3235"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:35:3235"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:35:3235"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:38:3238"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:38:3238"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:38:3238"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:38:3238"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:41:3241"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:41:3241"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:41:3241"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:41:3241"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:49:3249"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:49:3249"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:49:3249"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:49:3249"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:32:52:3252"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:32:52:3252"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:32:52:3252"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:32:52:3252"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:33:06:336"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:33:06:336"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:33:06:336"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:33:06:336"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:33:34:3334"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:33:34:3334"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:33:34:3334"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:33:34:3334"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:35:13:3513"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 03:35:40:3540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged in: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:35:58:3558"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:36:31:3631"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:36:53:3653"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:37:14:3714"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:38:53:3853"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:39:55:3955"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:41:20:4120"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:42:05:425"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:45:05:455"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:45:05:455"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:45:05:455"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:45:05:455"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:45:13:4513"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:45:13:4513"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:45:13:4513"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:45:13:4513"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:45:27:4527"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:45:28:4528"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:45:28:4528"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:45:28:4528"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:45:52:4552"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:45:52:4552"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:45:52:4552"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:45:52:4552"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:46:05:465"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:46:05:465"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:46:05:465"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:46:05:465"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:48:56:4856"}
+{"email":"kabaloopsaws@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 03:49:12:4912"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew Google user registered via callback: kabaloopsaws@gmail.com\u001b[39m","timestamp":"2025-09-02 03:49:12:4912"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kabaloopsaws@gmail.com\u001b[39m","timestamp":"2025-09-02 03:50:58:5058"}
+{"email":"kjbeat16@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 03:51:47:5147"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 03:53:27:5327"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mSIGINT received, shutting down gracefully\u001b[39m","timestamp":"2025-09-02 03:57:29:5729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 03:57:34:5734"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 03:57:34:5734"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 03:57:34:5734"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 03:57:34:5734"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:02:45:245"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:02:45:245"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:02:45:245"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:02:45:245"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:03:16:316"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:05:40:540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:05:40:540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:05:40:540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:05:40:540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:06:03:63"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:06:03:63"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:06:03:63"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:06:03:63"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:06:43:643"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:08:04:84"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mSIGTERM received, shutting down gracefully\u001b[39m","timestamp":"2025-09-02 04:08:27:827"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:09:59:959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:09:59:959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:09:59:959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:09:59:959"}
+{"code":"present","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received query params:\u001b[39m","state":"present","themePreferences":"missing","timestamp":"2025-09-02 04:10:39:1039"}
+{"email":"kjbeat16@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 04:10:39:1039"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew Google user registered via callback: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:10:39:1039"}
+{"code":"present","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received query params:\u001b[39m","state":"present","themePreferences":"missing","timestamp":"2025-09-02 04:11:53:1153"}
+{"email":"kjbeat16@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 04:11:53:1153"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew Google user registered via callback: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:11:53:1153"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:12:13:1213"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:12:28:1228"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for non-existent email: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:12:35:1235"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mAttempting to send email to: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📧 Email Configuration Test:\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mHost: smtp-relay.brevo.com\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPort: 587\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser: 75ed14002@smtp-brevo.com\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPass: ***\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All email configuration fields present\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Email sent successfully to kjbeat20@gmail.com - Message ID: <8fc68e92-aa82-bfff-e7a1-8389d5b4d8ce@kabaloops.com>\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mVerification email sent to kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew user registered: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:13:19:1319"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEmail verified for user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:13:44:1344"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:13:54:1354"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:14:03:143"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat20@gmail.com\u001b[39m","timestamp":"2025-09-02 04:14:29:1429"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:18:28:1828"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:18:28:1828"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:18:28:1828"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:18:28:1828"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:18:32:1832"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:18:32:1832"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:18:32:1832"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:18:32:1832"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:18:38:1838"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:18:38:1838"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:18:38:1838"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:18:38:1838"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:18:43:1843"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:18:43:1843"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:18:43:1843"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:18:43:1843"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:18:51:1851"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:18:51:1851"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:18:51:1851"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:18:51:1851"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:19:15:1915"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:19:15:1915"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:19:15:1915"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:19:15:1915"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:19:18:1918"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:19:18:1918"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:19:18:1918"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:19:18:1918"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:19:29:1929"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:19:29:1929"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:19:29:1929"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:19:29:1929"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:20:12:2012"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:20:12:2012"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:20:12:2012"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:20:12:2012"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:21:03:213"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:21:03:213"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:21:03:213"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:21:03:213"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:21:34:2134"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:21:34:2134"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:21:34:2134"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:21:34:2134"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:21:48:2148"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:21:48:2148"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:21:48:2148"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:21:48:2148"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:22:01:221"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:22:01:221"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:22:01:221"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:22:01:221"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:23:31:2331"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:23:31:2331"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:23:31:2331"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:23:31:2331"}
+{"code":"present","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received query params:\u001b[39m","state":"present","themePreferences":"missing","timestamp":"2025-09-02 04:24:14:2414"}
+{"email":"kjbeat16@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 04:24:14:2414"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew Google user registered via callback: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:24:15:2415"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:25:09:259"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:26:19:2619"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:26:40:2640"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for non-existent email: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:29:15:2915"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for non-existent email: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:29:56:2956"}
+{"code":"present","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received query params:\u001b[39m","state":"present","themePreferences":"missing","timestamp":"2025-09-02 04:30:30:3030"}
+{"email":"kjbeat16@gmail.com","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mGoogle OAuth callback received data:\u001b[39m","oauthData":{},"timestamp":"2025-09-02 04:30:31:3031"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mNew Google user registered via callback: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:30:31:3031"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:30:53:3053"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged out: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:31:14:3114"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset requested for OAuth-only user: kjbeat16@gmail.com - allowing password creation\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mAttempting to send email to: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📧 Email Configuration Test:\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mHost: smtp-relay.brevo.com\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPort: 587\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser: 75ed14002@smtp-brevo.com\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPass: ***\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All email configuration fields present\u001b[39m","timestamp":"2025-09-02 04:31:24:3124"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Email sent successfully to kjbeat16@gmail.com - Message ID: <df4bd083-215a-b8fd-57b8-185aff1aea44@kabaloops.com>\u001b[39m","timestamp":"2025-09-02 04:31:25:3125"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset email sent to: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:31:25:3125"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mPassword reset successful for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:31:53:3153"}
+{"isOperational":true,"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mLogin error: Invalid email or password\u001b[39m","stack":"Error: Invalid email or password\n    at AuthService.login (/Users/kjmix/Desktop/KabaX Codes/kababeat.kabax.ca/KabaBeats-Backend/src/modules/auth/auth.service.ts:151:15)\n    at async AuthController.login (/Users/kjmix/Desktop/KabaX Codes/kababeat.kabax.ca/KabaBeats-Backend/src/modules/auth/auth.controller.ts:32:22)","statusCode":401,"timestamp":"2025-09-02 04:32:07:327"}
+{"error":"Error: Invalid email or password\n    at AuthService.login (/Users/kjmix/Desktop/KabaX Codes/kababeat.kabax.ca/KabaBeats-Backend/src/modules/auth/auth.service.ts:151:15)\n    at async AuthController.login (/Users/kjmix/Desktop/KabaX Codes/kababeat.kabax.ca/KabaBeats-Backend/src/modules/auth/auth.controller.ts:32:22)","ip":"::1","level":"\u001b[31merror\u001b[39m","message":"\u001b[31mError 401: Invalid email or password\u001b[39m","method":"POST","timestamp":"2025-09-02 04:32:07:327","url":"/api/v1/auth/login","userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUpdated location for user kjbeat16@gmail.com: Canada\u001b[39m","timestamp":"2025-09-02 04:32:12:3212"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mUser logged in: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:32:12:3212"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:37:25:3725"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:37:46:3746"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:38:01:381"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:38:47:3847"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:38:47:3847"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:39:35:3935"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:39:54:3954"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:43:22:4322"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:21:4521"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:29:4529"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:31:4531"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:35:4535"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:38:4538"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:40:4540"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:43:4543"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:44:4544"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:44:4544"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:45:47:4547"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:46:23:4623"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:46:28:4628"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:46:41:4641"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:47:04:474"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:47:08:478"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:47:10:4710"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:47:17:4717"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mTheme preferences updated for user: kjbeat16@gmail.com\u001b[39m","timestamp":"2025-09-02 04:48:31:4831"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Connected to MongoDB Atlas\u001b[39m","timestamp":"2025-09-02 04:49:11:4911"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Server running on port 3000 in development mode\u001b[39m","timestamp":"2025-09-02 04:49:11:4911"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check available at http://localhost:3000/health\u001b[39m","timestamp":"2025-09-02 04:49:11:4911"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔮 GraphQL endpoint available at http://localhost:3000/graphql\u001b[39m","timestamp":"2025-09-02 04:49:11:4911"}

@@ -1,11 +1,12 @@
 import { User } from './auth.model';
-import { IAuthService, LoginCredentials, RegisterData, GoogleAuthData, AuthResponse, ChangePasswordRequest } from './auth.interface';
+import { IAuthService, LoginCredentials, RegisterData, AuthResponse, ChangePasswordRequest } from './auth.interface';
 import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
 import { generateToken, generateRefreshToken, verifyRefreshToken, comparePassword } from '@/utils/auth';
 import { IUser } from '@/types';
 import { emailService } from '@/utils/emailService';
 import { generateOTP, generateOTPExpiration, isOTPExpired } from '@/utils/otpGenerator';
+import { generatePasswordResetToken, generatePasswordResetExpiration, isPasswordResetTokenExpired } from '@/utils/passwordResetToken';
 
 export class AuthService implements IAuthService {
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -166,8 +167,12 @@ export class AuthService implements IAuthService {
       // Add refresh token to user
       await user.addRefreshToken(refreshToken);
 
-      // Update last login
+      // Update last login and location
       user.lastLogin = new Date();
+      if (credentials.country) {
+        user.country = credentials.country;
+        logger.info(`Updated location for user ${user.email}: ${credentials.country}`);
+      }
       await user.save();
 
       logger.info(`User logged in: ${user.email}`);
@@ -183,63 +188,7 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async loginWithGoogle(data: GoogleAuthData): Promise<AuthResponse> {
-    try {
-      // Check if user already exists
-      let user = await User.findOne({ email: data.email });
-
-      if (user) {
-        // User exists, update last login
-        user.lastLogin = new Date();
-        await user.save();
-      } else {
-        // Create new user
-        user = new User({
-          email: data.email,
-          username: data.username,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          avatar: data.avatar,
-          country: data.country || 'Nigeria',
-          role: 'creator',
-          isVerified: true, // Google accounts are pre-verified
-          isActive: true,
-          refreshTokens: [],
-          lastLogin: new Date(),
-        });
-
-        await user.save();
-        logger.info(`New Google user registered: ${user.email}`);
-      }
-
-      // Generate tokens
-      const accessToken = generateToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role,
-      });
-
-      const refreshToken = generateRefreshToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role,
-      });
-
-      // Add refresh token to user
-      await user.addRefreshToken(refreshToken);
-
-      return {
-        user: this.sanitizeUser(user),
-        accessToken,
-        refreshToken,
-      };
-    } catch (error) {
-      logger.error('Google login error:', error);
-      throw error;
-    }
-  }
-
-  async handleGoogleCallback(code: string, state?: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async handleGoogleCallback(code: string, state?: string, oauthData?: { username?: string; country?: string; themePreferences?: any }): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       // Exchange authorization code for access token
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -282,6 +231,12 @@ export class AuthService implements IAuthService {
         picture: string;
       };
 
+      // Log OAuth data for debugging
+      logger.info('Google OAuth callback received data:', {
+        email: googleUser.email,
+        oauthData: oauthData
+      });
+
       // Check if user exists
       let user = await User.findOne({ email: googleUser.email });
 
@@ -289,17 +244,25 @@ export class AuthService implements IAuthService {
         // Create new user
         user = new User({
           email: googleUser.email,
-          username: googleUser.email.split('@')[0], // Use email prefix as username
+          username: oauthData?.username || googleUser.email.split('@')[0], // Use provided username or email prefix
           firstName: googleUser.given_name,
           lastName: googleUser.family_name,
           avatar: googleUser.picture,
-          country: 'Nigeria',
+          country: oauthData?.country || 'Nigeria', // Use provided country or default
           role: 'creator',
           isVerified: true,
           isActive: true,
           googleId: googleUser.id,
           refreshTokens: [],
           lastLogin: new Date(),
+          themePreferences: oauthData?.themePreferences || {
+            mode: 'system',
+            customTheme: {
+              primary: '#FFFFFF',
+              accent: '#D9D9D9',
+              radius: 0.75,
+            },
+          },
         });
 
         await user.save();
@@ -312,6 +275,11 @@ export class AuthService implements IAuthService {
         }
         if (!user.googleId) {
           user.googleId = googleUser.id;
+        }
+        // Update location if provided
+        if (oauthData?.country) {
+          user.country = oauthData.country;
+          logger.info(`Updated location for existing Google user ${user.email}: ${oauthData.country}`);
         }
         await user.save();
       }
@@ -408,17 +376,47 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     try {
       const user = await User.findOne({ email });
       if (!user) {
-        // Don't reveal if email exists or not
-        return;
+        // Don't reveal if email exists or not for security
+        logger.info(`Password reset requested for non-existent email: ${email}`);
+        return { success: true, message: 'If an account with that email exists, a password reset link has been sent.' };
       }
 
-      // TODO: Implement email sending logic
-      // For now, just log the request
-      logger.info(`Password reset requested for: ${email}`);
+      // Allow OAuth users to set a password (they don't have one yet)
+      if (!user.password) {
+        logger.info(`Password reset requested for OAuth-only user: ${email} - allowing password creation`);
+      }
+
+      // Generate password reset token
+      const resetToken = generatePasswordResetToken();
+      const resetExpiration = generatePasswordResetExpiration();
+
+      // Save reset token to user
+      user.passwordResetToken = resetToken;
+      user.passwordResetExpires = resetExpiration;
+      await user.save();
+
+      // Send password reset email
+      try {
+        await emailService.sendEmail({
+          to: user.email,
+          subject: user.password ? 'Reset Your KabaBeats Password' : 'Set Your KabaBeats Password',
+          html: emailService.generatePasswordResetEmailHTML(resetToken, user.username, user.email, user),
+          text: emailService.generatePasswordResetEmailText(resetToken, user.username, user.email, user),
+        });
+        logger.info(`Password reset email sent to: ${email}`);
+        return { success: true, message: 'Password reset email sent successfully.' };
+      } catch (emailError) {
+        logger.error('Failed to send password reset email:', emailError);
+        // Clear the reset token if email fails
+        user.passwordResetToken = undefined as any;
+        user.passwordResetExpires = undefined as any;
+        await user.save();
+        throw new CustomError('Failed to send password reset email', 500);
+      }
     } catch (error) {
       logger.error('Forgot password error:', error);
       throw error;
@@ -427,8 +425,31 @@ export class AuthService implements IAuthService {
 
   async resetPassword(token: string, password: string): Promise<void> {
     try {
-      // TODO: Implement token verification and password reset
-      logger.info(`Password reset attempted with token: ${token}`);
+      // Find user by reset token
+      const user = await User.findOne({
+        passwordResetToken: token,
+        passwordResetExpires: { $gt: new Date() }
+      }).select('+passwordResetToken +passwordResetExpires');
+
+      if (!user) {
+        throw new CustomError('Invalid or expired password reset token', 400);
+      }
+
+      // Check if token is expired
+      if (isPasswordResetTokenExpired(user.passwordResetExpires!)) {
+        throw new CustomError('Password reset token has expired', 400);
+      }
+
+      // Update password
+      user.password = password;
+      user.passwordResetToken = undefined as any;
+      user.passwordResetExpires = undefined as any;
+      
+      // Clear all refresh tokens to force re-login
+      await user.clearRefreshTokens();
+      await user.save();
+
+      logger.info(`Password reset successful for user: ${user.email}`);
     } catch (error) {
       logger.error('Reset password error:', error);
       throw error;
@@ -458,35 +479,6 @@ export class AuthService implements IAuthService {
       logger.info(`Password changed for user: ${user.email}`);
     } catch (error) {
       logger.error('Change password error:', error);
-      throw error;
-    }
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    try {
-      // TODO: Implement email verification logic
-      logger.info(`Email verification attempted with token: ${token}`);
-    } catch (error) {
-      logger.error('Verify email error:', error);
-      throw error;
-    }
-  }
-
-  async resendVerificationEmail(email: string): Promise<void> {
-    try {
-      const user = await User.findOne({ email });
-      if (!user) {
-        throw new CustomError('User not found', 404);
-      }
-
-      if (user.isVerified) {
-        throw new CustomError('Email already verified', 400);
-      }
-
-      // TODO: Implement email sending logic
-      logger.info(`Verification email resent to: ${email}`);
-    } catch (error) {
-      logger.error('Resend verification email error:', error);
       throw error;
     }
   }

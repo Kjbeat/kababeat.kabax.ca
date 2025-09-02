@@ -24,6 +24,9 @@ export interface IUser extends BaseDocument {
   // Email verification fields
   emailVerificationOTP?: string;
   emailVerificationExpires?: Date;
+  // Password reset fields
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   // OAuth fields
   googleId?: string;
   facebookId?: string;

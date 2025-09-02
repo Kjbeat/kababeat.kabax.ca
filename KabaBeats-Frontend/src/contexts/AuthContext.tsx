@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { hslToHex, hexToHslVar } from '../utils/hslToHex';
+import { getUserCountry } from '../utils/geolocation';
 import { User, AuthContextType } from '../interface-types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,12 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      // Detect user's current location
+      let detectedCountry = 'Nigeria'; // Default fallback
+      try {
+        console.log('AuthContext: Detecting location for login...');
+        detectedCountry = await getUserCountry();
+        console.log('AuthContext: Detected country for login:', detectedCountry);
+      } catch (error) {
+        console.error('AuthContext: Failed to detect location during login:', error);
+        // Continue with default country
+      }
+
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, country: detectedCountry }),
       });
 
       if (!response.ok) {
@@ -116,10 +128,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string, username: string, firstName?: string, lastName?: string, country?: string) => {
     setLoading(true);
     try {
-      // Get current theme preferences from localStorage
+      // Get current theme mode from localStorage
       const currentTheme = localStorage.getItem('kababeats-theme-mode') || 'system';
       const customTheme = localStorage.getItem('custom-theme-vars-v1');
       
+      // Determine effective theme mode (handle 'system' by checking system preference)
+      let effectiveTheme: 'light' | 'dark' = 'dark';
+      if (currentTheme === 'light') {
+        effectiveTheme = 'light';
+      } else if (currentTheme === 'dark') {
+        effectiveTheme = 'dark';
+      } else if (currentTheme === 'system') {
+        // Check system preference
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      
+      // Use default platform theme colors based on effective theme mode
       const themePreferences: {
         mode: 'light' | 'dark' | 'system';
         customTheme?: {
@@ -130,12 +154,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } = {
         mode: currentTheme as 'light' | 'dark' | 'system',
         customTheme: {
-          primary: '#000000', // Default black primary from index.css
-          accent: '#262626',  // Default accent from index.css (0 0% 15%)
+          primary: effectiveTheme === 'dark' ? '#FFFFFF' : '#000000', // White for dark mode, black for light mode
+          accent: effectiveTheme === 'dark' ? '#D9D9D9' : '#262626',  // Light gray for dark mode, dark gray for light mode
           radius: 0.75,       // Default radius
         },
       };
 
+      // If user has custom theme, preserve their choices
       if (customTheme) {
         try {
           const parsedCustomTheme = JSON.parse(customTheme);
@@ -215,9 +240,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/google/callback';
+      const baseRedirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/google/callback';
       const scope = 'email profile';
       const state = Math.random().toString(36).substring(7);
+      
+      // Detect current location for login
+      let detectedCountry = 'Nigeria'; // Default fallback
+      try {
+        console.log('AuthContext: Detecting location for Google login...');
+        detectedCountry = await getUserCountry();
+        console.log('AuthContext: Detected country for Google login:', detectedCountry);
+      } catch (error) {
+        console.error('AuthContext: Failed to detect location during Google login:', error);
+        // Continue with default country
+      }
+      
+      // Get OAuth data from localStorage
+      const oauthUsername = localStorage.getItem('oauth-username');
+      const oauthCountry = localStorage.getItem('oauth-country') || detectedCountry; // Use detected country if not in localStorage
+      const oauthThemePreferences = localStorage.getItem('oauth-theme-preferences');
+      
+      console.log('AuthContext: OAuth data from localStorage:', {
+        oauthUsername,
+        oauthCountry,
+        oauthThemePreferences
+      });
+      
+      // Build redirect URI with OAuth data as query parameters
+      const redirectParams = new URLSearchParams();
+      if (oauthUsername) redirectParams.append('username', oauthUsername);
+      if (oauthCountry) redirectParams.append('country', oauthCountry);
+      if (oauthThemePreferences) redirectParams.append('themePreferences', oauthThemePreferences);
+      
+      const redirectUri = redirectParams.toString() 
+        ? `${baseRedirectUri}?${redirectParams.toString()}`
+        : baseRedirectUri;
       
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${clientId}&` +
@@ -239,10 +296,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signupWithGoogle = async (username: string, country: string = 'Nigeria') => {
-    // Store theme preferences for Google OAuth callback
+    // Get current theme mode from localStorage
     const currentTheme = localStorage.getItem('kababeats-theme-mode') || 'system';
     const customTheme = localStorage.getItem('custom-theme-vars-v1');
     
+    // Determine effective theme mode (handle 'system' by checking system preference)
+    let effectiveTheme: 'light' | 'dark' = 'dark';
+    if (currentTheme === 'light') {
+      effectiveTheme = 'light';
+    } else if (currentTheme === 'dark') {
+      effectiveTheme = 'dark';
+    } else if (currentTheme === 'system') {
+      // Check system preference
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    
+    // Use default platform theme colors based on effective theme mode
     const themePreferences: {
       mode: 'light' | 'dark' | 'system';
       customTheme?: {
@@ -253,12 +322,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = {
       mode: currentTheme as 'light' | 'dark' | 'system',
       customTheme: {
-        primary: '#000000', // Default black primary from index.css
-        accent: '#262626',  // Default accent from index.css (0 0% 15%)
+        primary: effectiveTheme === 'dark' ? '#FFFFFF' : '#000000', // White for dark mode, black for light mode
+        accent: effectiveTheme === 'dark' ? '#D9D9D9' : '#262626',  // Light gray for dark mode, dark gray for light mode
         radius: 0.75,       // Default radius
       },
     };
 
+    // If user has custom theme, preserve their choices
     if (customTheme) {
       try {
         const parsedCustomTheme = JSON.parse(customTheme);
@@ -287,6 +357,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       } catch (error) {
         console.error('Error parsing custom theme:', error);
+        // Keep the default theme if parsing fails
       }
     }
 
@@ -294,6 +365,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('oauth-theme-preferences', JSON.stringify(themePreferences));
     localStorage.setItem('oauth-username', username);
     localStorage.setItem('oauth-country', country);
+    
+    console.log('AuthContext: Stored OAuth data in localStorage:', {
+      username,
+      country,
+      themePreferences
+    });
     
     // For Google OAuth, signup and login are the same flow
     await loginWithGoogle();

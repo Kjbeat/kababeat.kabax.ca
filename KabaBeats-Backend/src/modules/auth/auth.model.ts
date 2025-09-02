@@ -89,6 +89,15 @@ const userSchema = new Schema<IUserDocument>({
     type: Date,
     select: false,
   },
+  // Password reset fields
+  passwordResetToken: {
+    type: String,
+    select: false,
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false,
+  },
   // OAuth fields
   googleId: {
     type: String,
@@ -128,11 +137,11 @@ const userSchema = new Schema<IUserDocument>({
     customTheme: {
       primary: {
         type: String,
-        default: '#000000',
+        default: '#000000', // Default to light mode colors (will be overridden by frontend based on theme mode)
       },
       accent: {
         type: String,
-        default: '#333333',
+        default: '#262626', // Default to light mode colors (will be overridden by frontend based on theme mode)
       },
       radius: {
         type: Number,

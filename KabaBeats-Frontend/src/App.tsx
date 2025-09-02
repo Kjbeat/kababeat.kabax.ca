@@ -15,7 +15,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { SidebarProvider } from "@/components/ui/sidebar";
 // Module imports
 import { LandingLayout } from "@/modules/landing";
-import { LoginForm, SignupForm, OTPVerification } from "@/modules/auth";
+import { LoginForm, SignupForm, OTPVerification, ForgotPasswordForm, ResetPasswordForm } from "@/modules/auth";
 import { BrowseLayout } from "@/modules/browse";
 import { UploadBeatLayout } from "@/modules/upload";
 import { LibraryLayout } from "@/modules/library";
@@ -62,6 +62,8 @@ function App() {
                       <Route path="/login" element={<LoginForm />} />
                       <Route path="/signup" element={<SignupForm />} />
                       <Route path="/verify-email" element={<OTPVerification />} />
+                      <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+                      <Route path="/reset-password" element={<ResetPasswordForm />} />
                       <Route path="/auth/callback" element={<OAuthCallback />} />
                        <Route path="/" element={<LandingLayout />} />
 

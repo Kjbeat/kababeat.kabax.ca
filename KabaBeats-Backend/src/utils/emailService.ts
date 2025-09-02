@@ -210,6 +210,164 @@ This email was sent to ${email}
 If you have any questions, contact us at support@kababeats.com
     `;
   }
+
+  generatePasswordResetEmailHTML(resetToken: string, username: string, email: string, user?: any): string {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your KabaBeats Password</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+          }
+          .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 10px;
+          }
+          .reset-button {
+            display: inline-block;
+            background-color: #6366f1;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+          }
+          .reset-button:hover {
+            background-color: #4f46e5;
+          }
+          .instructions {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+          }
+          .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+          }
+          .token-display {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #495057;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">🎵 KabaBeats</div>
+            <h1>Reset Your Password</h1>
+          </div>
+          
+          <p>Hi ${username},</p>
+          
+          <p>We received a request to ${user?.password ? 'reset your password' : 'set a password'} for your KabaBeats account. If you made this request, click the button below to ${user?.password ? 'reset' : 'set'} your password:</p>
+          
+          <div style="text-align: center;">
+            <a href="${resetUrl}" class="reset-button">Reset My Password</a>
+          </div>
+          
+          <div class="instructions">
+            <strong>Alternative Method:</strong>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <div class="token-display">${resetUrl}</div>
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Security Notice:</strong>
+            <ul>
+              <li>This link will expire in 1 hour</li>
+              <li>If you didn't request a password reset, please ignore this email</li>
+              <li>Never share this link with anyone</li>
+              <li>KabaBeats will never ask for your password via email</li>
+            </ul>
+          </div>
+          
+          <p>If you continue to have problems accessing your account, please contact our support team.</p>
+          
+          <div class="footer">
+            <p>This email was sent to ${email}</p>
+            <p>© 2024 KabaBeats. All rights reserved.</p>
+            <p>If you have any questions, contact us at support@kababeats.com</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  generatePasswordResetEmailText(resetToken: string, username: string, email: string, user?: any): string {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    
+    return `
+KabaBeats - Reset Your Password
+
+Hi ${username},
+
+We received a request to ${user?.password ? 'reset your password' : 'set a password'} for your KabaBeats account. If you made this request, use the link below to ${user?.password ? 'reset' : 'set'} your password:
+
+Reset Link: ${resetUrl}
+
+Instructions:
+- Click the link above or copy and paste it into your browser
+- This link will expire in 1 hour
+- If you didn't request a password reset, please ignore this email
+
+Security Notice:
+- Never share this link with anyone
+- KabaBeats will never ask for your password via email
+- If you continue to have problems, contact our support team
+
+This email was sent to ${email}
+© 2024 KabaBeats. All rights reserved.
+If you have any questions, contact us at support@kababeats.com
+    `;
+  }
 }
 
 export const emailService = new EmailService();
