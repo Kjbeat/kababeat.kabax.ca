@@ -568,12 +568,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUserData = async () => {
+    if (!accessToken) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setUser(result.data);
+        localStorage.setItem('kababeats-user', JSON.stringify(result.data));
+        
+        // Load user's theme preferences if they exist
+        if (result.data.themePreferences) {
+          loadUserThemePreferences(result.data.themePreferences);
+        }
+      }
+    } catch (error) {
+      console.error('Refresh user data error:', error);
+    }
+  };
+
   const updateProfile = async (data: {
     username?: string;
     email?: string;
     firstName?: string;
     lastName?: string;
     bio?: string;
+    avatar?: string;
     socialLinks?: {
       website?: string;
       instagram?: string;
@@ -597,12 +627,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(result.message || 'Failed to update profile');
       }
 
-      // Update local user state
-      if (user) {
-        setUser({
+      // Update local user state with the response data from server
+      if (user && result.data) {
+        const updatedUser = {
           ...user,
-          ...data,
-        });
+          ...result.data, // Use server response data to ensure we have the latest info
+        };
+        setUser(updatedUser);
+        localStorage.setItem('kababeats-user', JSON.stringify(updatedUser));
       }
     } catch (error) {
       console.error('Update profile error:', error);
@@ -628,6 +660,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       verifyEmailOTP,
       resendVerificationOTP,
       updateProfile,
+      refreshUserData,
     }}>
       {children}
     </AuthContext.Provider>

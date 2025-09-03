@@ -56,6 +56,7 @@ const updateProfileSchema = Joi.object({
   lastName: Joi.string().max(50).optional(),
   bio: Joi.string().max(500).allow('').optional(),
   country: Joi.string().max(50).optional(),
+  avatar: Joi.string().uri().allow('').optional(),
   socialLinks: Joi.object({
     website: Joi.string().uri().allow('').optional(),
     instagram: Joi.string().uri().allow('').optional(),

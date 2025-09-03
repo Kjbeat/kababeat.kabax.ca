@@ -1,7 +1,7 @@
 import { IMediaService, UploadRequest, UploadResponse, ProcessingResult } from './media.interface';
 import { MediaFile, IMediaFile } from './media.model';
 import { generateUploadUrl, generateDownloadUrl, deleteStorageFile, STORAGE_PATHS } from '@/utils/r2Storage';
-import { processMediaFile, validateAudioFile, validateImageFile, getImageDimensions, getAudioSettings } from '@/utils/mediaProcessor';
+// Media processing imports removed - using direct file storage
 import { 
   initializeChunkedUpload, 
   generateChunkUploadUrl, 
@@ -13,7 +13,7 @@ import {
   ChunkedUploadSession,
   ChunkUploadRequest 
 } from '@/utils/chunkedUpload';
-import { processAudioFile, extractAudioMetadata, ProcessingOptions } from '@/utils/audioProcessor';
+// Audio processing removed - using direct file storage
 import { CustomError } from '@/utils/errorHandler';
 import { logger } from '@/config/logger';
 import { User } from '../auth/auth.model';
@@ -214,23 +214,21 @@ export class MediaService implements IMediaService {
   /**
    * Process uploaded file based on type
    */
-  private async processUploadedFile(
+  private   async processUploadedFile(
     key: string,
     fileType: string
   ): Promise<ProcessingResult> {
     try {
-      // Determine content type from key
-      const contentType = this.getContentTypeFromKey(key);
+      // For now, just return the file as-is since we're using direct storage
+      logger.info(`File uploaded successfully: ${key}`);
       
-      // Set processing options based on file type
-      const options = this.getProcessingOptions(fileType);
-      
-      // Process the file
-      const result = await processMediaFile(key, contentType, options as any);
-      
-      logger.info(`Processed file: ${key}`);
-      
-      return result;
+      return {
+        originalKey: key,
+        metadata: {
+          format: this.getContentTypeFromKey(key),
+          size: 0, // Size will be determined by R2
+        }
+      };
     } catch (error) {
       logger.error('Error processing uploaded file:', error);
       throw error;
@@ -257,37 +255,7 @@ export class MediaService implements IMediaService {
     return contentTypes[extension || ''] || 'application/octet-stream';
   }
 
-  /**
-   * Get processing options based on file type
-   */
-  private getProcessingOptions(fileType: string) {
-    switch (fileType) {
-      case 'audio':
-        return {
-          audio: getAudioSettings('full'),
-        };
-      case 'artwork':
-        return {
-          image: {
-            quality: 90,
-            format: 'jpeg',
-            ...getImageDimensions('artwork'),
-            generateThumbnail: true,
-          },
-        };
-      case 'profile':
-        return {
-          image: {
-            quality: 85,
-            format: 'jpeg',
-            ...getImageDimensions('profile'),
-            generateThumbnail: true,
-          },
-        };
-      default:
-        return {};
-    }
-  }
+  // Processing options removed - using direct file storage
 
   /**
    * Initialize chunked upload for large files
@@ -396,11 +364,10 @@ export class MediaService implements IMediaService {
       // Complete the upload
       const result = await completeChunkedUpload(request);
       
-      // Process the audio file if it's an audio upload
+      // Audio processing removed - using direct file storage
+      
+      // Get session info
       const session = this.getUploadSession(request.sessionId);
-      if (session && session.fileType === 'audio') {
-        await this.processAudioFile(result.finalKey, session);
-      }
       
       // Create media file record
       const mediaFile = new MediaFile({
@@ -447,30 +414,7 @@ export class MediaService implements IMediaService {
 
   // HLS methods removed
 
-  /**
-   * Process audio file for streaming
-   */
-  private async processAudioFile(fileKey: string, session: ChunkedUploadSession): Promise<void> {
-    try {
-      const processingOptions: ProcessingOptions = {
-        generatePreview: true,
-        previewDuration: 30,
-        generateHLS: false,
-        outputFormats: ['mp3'],
-        quality: 'medium',
-      };
-
-      // In a real implementation, you would:
-      // 1. Download the file from R2
-      // 2. Process it with FFmpeg
-      // 3. Upload processed versions back to R2
-      
-      logger.info(`Processing audio file for streaming: ${fileKey}`);
-    } catch (error) {
-      logger.error('Error processing audio file:', error);
-      throw error;
-    }
-  }
+  // Audio processing removed - using direct file storage
 
   /**
    * Get upload session (helper method)

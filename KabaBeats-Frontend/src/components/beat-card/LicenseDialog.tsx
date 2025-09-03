@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Check, Download, ShoppingCart } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
 
 interface License {
@@ -53,7 +51,7 @@ export function LicenseDialog({
   getLicenseDetails
 }: LicenseDialogProps) {
   const [licenses, setLicenses] = useState<License[]>([]);
-  const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
+  const [selectedLicense, setSelectedLicense] = useState<License | LicenseOption | null>(null);
   const [loading, setLoading] = useState(false);
   const [calculatedPrices, setCalculatedPrices] = useState<Record<string, number>>({});
   const { toast } = useToast();
@@ -152,142 +150,48 @@ export function LicenseDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md w-[95vw] sm:w-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Choose License for "{beatTitle}"
-          </DialogTitle>
-          <DialogDescription>
-            Select the license type that best fits your needs. Each license includes different rights and file formats.
-          </DialogDescription>
+          <DialogTitle>Select License</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">Choose the license you want before adding to cart or free download.</DialogDescription>
         </DialogHeader>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {(licenseOptions.length > 0 ? licenseOptions : licenses).map((license) => {
-              const price = calculatedPrices[license.value || license.type] || license.price;
-              const isSelected = selectedLicense?._id === license._id || selectedLicense?.type === license.value;
-              
-              return (
-                <div
-                  key={license._id || license.value}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedLicense(license)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{getLicenseIcon(license.type || license.value)}</span>
-                        <div>
-                          <h3 className="font-semibold text-lg">{license.name || license.label}</h3>
-                          <Badge className={getLicenseColor(license.type || license.value)}>
-                            {license.type || license.value}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <p className="text-muted-foreground mb-3">{license.description}</p>
-                      
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Features:</h4>
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm">
-                          {(getLicenseDetails ? getLicenseDetails(license.type || license.value) : license.features || []).map((feature, index) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      {license.restrictions && license.restrictions.length > 0 && (
-                        <div className="mt-3">
-                          <h4 className="font-medium text-sm text-muted-foreground">Restrictions:</h4>
-                          <ul className="text-sm text-muted-foreground">
-                            {license.restrictions.map((restriction, index) => (
-                              <li key={index}>• {restriction}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="text-right ml-4">
-                      <div className="text-2xl font-bold">
-                        {price === 0 ? 'FREE' : `$${price}`}
-                      </div>
-                      {price > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          Base: ${beatPrice}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {isSelected && (
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <h4 className="font-medium text-sm mb-2">Usage Rights:</h4>
-                        <p className="text-sm text-muted-foreground">{license.usageRights || 'See features above for usage details.'}</p>
-                      </div>
-                    </div>
-                  )}
+        <div className="space-y-4 py-2">
+          <ToggleGroup type="single" value={selectedLicense ? ((selectedLicense as any).value || (selectedLicense as any).type) : ''} onValueChange={(v) => {
+            if (v) {
+              const license = (licenseOptions.length > 0 ? licenseOptions : licenses).find(l => (l as any).value === v || (l as any).type === v);
+              if (license) setSelectedLicense(license);
+            }
+          }} className="flex flex-col gap-2 items-stretch">
+            {(licenseOptions.length > 0 ? licenseOptions : licenses).map(opt => (
+              <ToggleGroupItem
+                key={(opt as any)._id || (opt as any).value}
+                value={(opt as any).value || (opt as any).type}
+                aria-label={(opt as any).label || (opt as any).name}
+                className={`flex justify-between items-center w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-md border text-left ${selectedLicense && ((selectedLicense as any).value === (opt as any).value || (selectedLicense as any).type === (opt as any).type) ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 hover:bg-muted/70'} transition-colors`}
+              >
+                <div className="flex flex-col text-[10px] sm:text-xs">
+                  <span className="font-semibold text-[12px] sm:text-[13px] leading-tight">{(opt as any).label || (opt as any).name}</span>
+                  {(opt as any).description && <span className="text-[9px] sm:text-[10px] opacity-70 mt-0.5">{(opt as any).description}</span>}
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        <Separator />
-
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {selectedLicense ? (
-              <>
-                Selected: <span className="font-medium">{(selectedLicense as any).name || (selectedLicense as any).label}</span>
-                {calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value] > 0 && (
-                  <span className="ml-2">- ${calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value]}</span>
-                )}
-              </>
-            ) : (
-              'Please select a license to continue'
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            {selectedLicense && (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={handleAddToCart}
-                  className="gap-2"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  Add to Cart
-                </Button>
-                <Button 
-                  onClick={handleDownload}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {calculatedPrices[(selectedLicense as any).type || (selectedLicense as any).value] === 0 ? 'Download Free' : 'Buy & Download'}
-                </Button>
-              </>
-            )}
-          </div>
+                <div className="text-[10px] sm:text-[11px] font-medium">{calculatedPrices[(opt as any).value || (opt as any).type] === 0 ? 'FREE' : `$${calculatedPrices[(opt as any).value || (opt as any).type]?.toFixed(2) || (opt as any).price?.toFixed(2)}`}</div>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          {selectedLicense && (
+            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2 sm:p-3">
+              <p className="text-[11px] sm:text-xs font-medium mb-1">What's included:</p>
+              <ul className="text-[9px] sm:text-[10px] leading-relaxed grid gap-1 list-disc pl-3 sm:pl-4">
+                {(getLicenseDetails ? getLicenseDetails((selectedLicense as any).type || (selectedLicense as any).value) : (selectedLicense as any).features || []).map((line: string) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+        <DialogFooter className="mt-2 flex gap-2 justify-end">
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 text-[11px] sm:text-xs" onClick={onClose}>Cancel</Button>
+          <Button size="sm" className="h-7 sm:h-8 text-[11px] sm:text-xs" onClick={handleAddToCart} disabled={!selectedLicense}>Add to Cart</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

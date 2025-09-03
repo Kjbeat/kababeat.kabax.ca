@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
@@ -15,10 +16,13 @@ import { User, Camera, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getCroppedImg } from "@/utils/imageUtils";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 export function ProfileSettings() {
   const { t } = useLanguage();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, accessToken, refreshUserData } = useAuth();
   const { toast } = useToast();
   
   const [profileData, setProfileData] = useState({
@@ -82,6 +86,13 @@ export function ProfileSettings() {
     }
   }, [user, extractHandle]);
 
+  // Refresh user data when component mounts to ensure we have the latest information
+  useEffect(() => {
+    if (user) {
+      refreshUserData();
+    }
+  }, []); // Only run on mount
+
   // Save profile data
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -108,6 +119,10 @@ export function ProfileSettings() {
       };
 
       await updateProfile(updateData);
+      
+      // Refresh user data to ensure we have the latest information
+      await refreshUserData();
+      
       toast({
         title: "Success",
         description: "Profile updated successfully!",
@@ -130,7 +145,7 @@ export function ProfileSettings() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Record<string, number> | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{x: number, y: number, width: number, height: number} | null>(null);
 
   // Dropzone
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -155,10 +170,117 @@ export function ProfileSettings() {
     setCroppedAreaPixels(areaPixels);
   }, [setCroppedAreaPixels]);
 
-  // Save cropped image (stub)
-  const handleSave = () => {
-    // TODO: Implement actual cropping and upload logic
-    setOpen(false);
+  // Save cropped image
+  const handleSave = async () => {
+    if (!croppedAreaPixels || !imageSrc) return;
+    
+    try {
+      // Get cropped image
+      const croppedImageUrl = await getCroppedImg(imageSrc, croppedAreaPixels, 0);
+      
+      // Convert to File
+      const response = await fetch(croppedImageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
+      
+      // Upload to backend
+      await uploadProfilePicture(file);
+      
+      setOpen(false);
+      setImageSrc(null);
+      setCroppedAreaPixels(null);
+      
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully!",
+      });
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile picture. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Upload profile picture
+  const uploadProfilePicture = async (file: File) => {
+    if (!user) return;
+    
+    try {
+      // Step 1: Get upload URL
+      const uploadResponse = await fetch(`${API_BASE_URL}/media/upload-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          fileType: 'profile',
+          originalName: file.name,
+          contentType: file.type,
+          size: file.size,
+        }),
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const uploadData = await uploadResponse.json();
+      if (!uploadData.success) {
+        throw new Error(uploadData.error?.message || 'Failed to get upload URL');
+      }
+
+      // Step 2: Upload file to R2
+      const uploadToR2Response = await fetch(uploadData.data.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadToR2Response.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      // Step 3: Confirm upload
+      const confirmResponse = await fetch(`${API_BASE_URL}/media/confirm-upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          key: uploadData.data.key,
+          fileType: 'profile',
+        }),
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm upload');
+      }
+
+      const confirmData = await confirmResponse.json();
+      if (!confirmData.success) {
+        throw new Error(confirmData.error?.message || 'Failed to confirm upload');
+      }
+
+      // Step 4: Update user profile with new avatar URL
+      const avatarUrl = `https://pub-6f3847c4d3f4471284d44c6913bcf6f0.r2.dev/${uploadData.data.key}`;
+      
+      // Update profile with avatar
+      await updateProfile({ avatar: avatarUrl } as any);
+      
+      // Refresh user data to ensure we have the latest avatar URL
+      await refreshUserData();
+      
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      throw error;
+    }
   };
 
 

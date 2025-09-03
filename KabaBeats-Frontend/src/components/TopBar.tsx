@@ -366,7 +366,7 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className={cn("p-1", iconHover)}>
               <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                <AvatarImage src={user?.avatar || "/placeholder-avatar.jpg"} alt={user?.username} />
+                <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.username} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
                   {user?.firstName && user?.lastName 
                     ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`

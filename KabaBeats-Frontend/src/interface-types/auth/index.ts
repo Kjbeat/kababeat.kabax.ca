@@ -61,6 +61,7 @@ export interface AuthContextType {
     firstName?: string;
     lastName?: string;
     bio?: string;
+    avatar?: string;
     socialLinks?: {
       website?: string;
       instagram?: string;
@@ -68,4 +69,5 @@ export interface AuthContextType {
       youtube?: string;
     };
   }) => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }

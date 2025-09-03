@@ -587,7 +587,7 @@ export class AuthService implements IAuthService {
       }
 
       // Update allowed fields
-      const allowedFields = ['username', 'email', 'firstName', 'lastName', 'bio', 'country', 'socialLinks'];
+      const allowedFields = ['username', 'email', 'firstName', 'lastName', 'bio', 'country', 'socialLinks', 'avatar'];
       allowedFields.forEach(field => {
         if (data[field as keyof IUser] !== undefined) {
           (user as any)[field] = data[field as keyof IUser];

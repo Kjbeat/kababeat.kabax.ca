@@ -286,7 +286,6 @@ export function MediaPlayerProvider({ children }: { children: React.ReactNode })
         audioRef.current.pause();
         audioRef.current = null;
       }
-      // HLS cleanup removed
     };
   }, []);
 

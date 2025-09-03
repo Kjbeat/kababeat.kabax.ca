@@ -60,24 +60,30 @@ export const resolvers = {
       limit?: number; 
       offset?: number 
     }) => {
+      const page = Math.floor(offset / limit) + 1;
+      
       if (search) {
         const result = await beatService.searchBeats(search, {
-          pagination: { page: Math.floor(offset / limit) + 1, limit },
-          query: search,
-          filters: { genre, bpm }
+          page,
+          limit,
+          ...(genre && { genre }),
+          ...(bpm && { minBPM: bpm, maxBPM: bpm })
         });
-        return result.beats;
+        return result.data;
       }
       
       const result = await beatService.getBeats({
-        pagination: { page: Math.floor(offset / limit) + 1, limit },
-        filters: { genre, bpm }
+        page,
+        limit,
+        ...(genre && { genre }),
+        ...(bpm && { minBPM: bpm, maxBPM: bpm })
       });
-      return result.beats;
+      return result.data;
     },
 
     beat: async (_: any, { id }: { id: string }) => {
-      return await beatService.getBeat(id);
+      const result = await beatService.getBeatById(id);
+      return result.data;
     },
 
     beatsByProducer: async (_: any, { producerId, limit = 20, offset = 0 }: { 
@@ -85,18 +91,29 @@ export const resolvers = {
       limit?: number; 
       offset?: number 
     }) => {
-      const result = await beatService.getBeatsByProducer(producerId, {
-        pagination: { page: Math.floor(offset / limit) + 1, limit }
+      const result = await beatService.getUserBeats(producerId, {
+        page: Math.floor(offset / limit) + 1,
+        limit
       });
-      return result.beats;
+      return result.data;
     },
 
     featuredBeats: async (_: any, { limit = 20 }: { limit?: number }) => {
-      return await beatService.getFeaturedBeats(limit);
+      const result = await beatService.getBeats({
+        page: 1,
+        limit,
+        sortBy: 'popular'
+      });
+      return result.data;
     },
 
     trendingBeats: async (_: any, { limit = 20 }: { limit?: number }) => {
-      return await beatService.getTrendingBeats(limit);
+      const result = await beatService.getBeats({
+        page: 1,
+        limit,
+        sortBy: 'plays'
+      });
+      return result.data;
     },
 
     // Playlist queries
@@ -190,14 +207,16 @@ export const resolvers = {
       const user = getUserFromContext(context);
       if (!user) throw new Error('Not authenticated');
       
-      return await beatService.createBeat(user.userId, input);
+      // GraphQL doesn't support file uploads directly, so this would need to be handled differently
+      throw new Error('Beat creation with files not supported via GraphQL. Use REST API.');
     },
 
     updateBeat: async (_: any, { id, input }: { id: string; input: any }, context: any) => {
       const user = getUserFromContext(context);
       if (!user) throw new Error('Not authenticated');
       
-      return await beatService.updateBeat(id, user.userId, input);
+      const result = await beatService.updateBeat(id, user.userId, input);
+      return result.data;
     },
 
     deleteBeat: async (_: any, { id }: { id: string }, context: any) => {
@@ -212,7 +231,7 @@ export const resolvers = {
       const user = getUserFromContext(context);
       if (!user) throw new Error('Not authenticated');
       
-      await beatService.likeBeat(id, user.userId);
+      await beatService.incrementLikes(id);
       return true;
     },
 
@@ -220,8 +239,8 @@ export const resolvers = {
       const user = getUserFromContext(context);
       if (!user) throw new Error('Not authenticated');
       
-      await beatService.unlikeBeat(id, user.userId);
-      return true;
+      // Note: Unlike functionality would need to be implemented in BeatService
+      throw new Error('Unlike functionality not implemented');
     },
 
     // Playlist mutations
